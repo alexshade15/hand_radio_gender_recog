@@ -123,3 +123,5 @@ dmypy.json
 .pyre/
 .png
 .DS_Store
+*.png
+*.h5

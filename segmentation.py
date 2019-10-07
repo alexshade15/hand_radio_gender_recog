@@ -4,34 +4,15 @@ from keras.callbacks import CSVLogger
 from keras.callbacks import EarlyStopping
 from keras.optimizers import Adam
 
+import model
 import os
 import cv2
 import random
 import numpy as np
 from matplotlib import pyplot as plt
 
-os.environ['KERAS_BACKEND'] = 'plaidml.keras.backend'
 
-train_datagen = ImageDataGenerator(
-    rescale=1. / 255)
-# ,
-# shear_range=0.2,
-# zoom_range=0.2,
-# horizontal_flip=True)
-
-val_datagen = ImageDataGenerator()  # rescale=1. / 255)
-
-BATCH_SIZE = 16
-
-# NORMALLY 4/8/16/32)
-train_image_generator = train_datagen.flow_from_directory('masked_hands/train_frames', batch_size=BATCH_SIZE)
-train_mask_generator = train_datagen.flow_from_directory('masked_hands/train_masks', batch_size=BATCH_SIZE)
-val_image_generator = val_datagen.flow_from_directory('masked_hands/val_frames', batch_size=BATCH_SIZE)
-val_mask_generator = val_datagen.flow_from_directory('masked_hands/val_masks', batch_size=BATCH_SIZE)
-
-train_generator = zip(train_image_generator, train_mask_generator)
-val_generator = zip(val_image_generator, val_mask_generator)
-
+# os.environ['KERAS_BACKEND'] = 'plaidml.keras.backend'
 
 def data_gen(img_folder, mask_folder, batch_size):
     c = 0
@@ -69,54 +50,75 @@ def data_gen(img_folder, mask_folder, batch_size):
         yield img, mask
 
 
-train_frame_path = 'masked_hands/train_frames/train'
-train_mask_path = 'masked_hands/train_masks/train'
+if __name__ == "__main__":
+    train_datagen = ImageDataGenerator(
+        rescale=1. / 255)
+    # ,
+    # shear_range=0.2,
+    # zoom_range=0.2,
+    # horizontal_flip=True)
 
-val_frame_path = 'masked_hands/val_frames/val'
-val_mask_path = 'masked_hands/val_masks/val'
+    val_datagen = ImageDataGenerator()  # rescale=1. / 255)
 
-# Train the model
-train_gen = data_gen(train_frame_path, train_mask_path, batch_size=BATCH_SIZE)
-val_gen = data_gen(val_frame_path, val_mask_path, batch_size=BATCH_SIZE)
+    BATCH_SIZE = 16
 
-NO_OF_TRAINING_IMAGES = len(os.listdir('masked_hands/train_frames/train'))
-NO_OF_VAL_IMAGES = len(os.listdir('masked_hands/val_frames/val'))
+    # NORMALLY 4/8/16/32)
+    train_image_generator = train_datagen.flow_from_directory('/data/masked_hands/train_frames', batch_size=BATCH_SIZE)
+    train_mask_generator = train_datagen.flow_from_directory('/data/masked_hands/train_masks', batch_size=BATCH_SIZE)
+    val_image_generator = val_datagen.flow_from_directory('/data/masked_hands/val_frames', batch_size=BATCH_SIZE)
+    val_mask_generator = val_datagen.flow_from_directory('/data/masked_hands/val_masks', batch_size=BATCH_SIZE)
 
-NO_OF_EPOCHS = 50
+    train_generator = zip(train_image_generator, train_mask_generator)
+    val_generator = zip(val_image_generator, val_mask_generator)
 
-weights_path = './weights_path/'
+    train_frame_path = 'masked_hands/train_frames/train'
+    train_mask_path = 'masked_hands/train_masks/train'
 
-m = model.unet()
-# opt = Adam(lr=1E-5, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
-# m.compile(loss='mean_squared_error', optimizer=opt, metrics=['accuracy'])
+    val_frame_path = 'masked_hands/val_frames/val'
+    val_mask_path = 'masked_hands/val_masks/val'
 
-# checkpoint = ModelCheckpoint(weights_path, monitor='accuracy', verbose=1, save_best_only=True, mode='max')
+    # Train the model
+    train_gen = data_gen(train_frame_path, train_mask_path, batch_size=BATCH_SIZE)
+    val_gen = data_gen(val_frame_path, val_mask_path, batch_size=BATCH_SIZE)
 
-# csv_logger = CSVLogger('./log.out', append=True, separator=';')
+    NO_OF_TRAINING_IMAGES = len(os.listdir('masked_hands/train_frames/train'))
+    NO_OF_VAL_IMAGES = len(os.listdir('masked_hands/val_frames/val'))
 
-# earlystopping = EarlyStopping(monitor='accuracy', verbose=1, min_delta=0.01, patience=3, mode='max')
+    NO_OF_EPOCHS = 50
 
-# callbacks_list = [checkpoint, csv_logger, earlystopping]
+    weights_path = './weights_path/'
 
-history = m.fit_generator(train_gen, epochs=NO_OF_EPOCHS, steps_per_epoch=(NO_OF_TRAINING_IMAGES // BATCH_SIZE),
-                          validation_data=val_gen, validation_steps=(NO_OF_VAL_IMAGES // BATCH_SIZE))
-# callbacks=callbacks_list)
-m.save('MoreData_SGD015_batch16_newIMG.h5')
+    m = model.unet()
+    # opt = Adam(lr=1E-5, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
+    # m.compile(loss='mean_squared_error', optimizer=opt, metrics=['accuracy'])
 
-print(history.history.keys())
-#  "Accuracy"
-plt.plot(history.history['acc'])
-plt.plot(history.history['val_acc'])
-plt.title('model accuracy')
-plt.ylabel('accuracy')
-plt.xlabel('epoch')
-plt.legend(['train', 'validation'], loc='upper left')
-plt.show()
-# "Loss"
-plt.plot(history.history['loss'])
-plt.plot(history.history['val_loss'])
-plt.title('model loss')
-plt.ylabel('loss')
-plt.xlabel('epoch')
-plt.legend(['train', 'validation'], loc='upper left')
-plt.show()
+    # checkpoint = ModelCheckpoint(weights_path, monitor='accuracy', verbose=1, save_best_only=True, mode='max')
+
+    # csv_logger = CSVLogger('./log.out', append=True, separator=';')
+
+    # earlystopping = EarlyStopping(monitor='accuracy', verbose=1, min_delta=0.01, patience=3, mode='max')
+
+    # callbacks_list = [checkpoint, csv_logger, earlystopping]
+
+    history = m.fit_generator(train_gen, epochs=NO_OF_EPOCHS, steps_per_epoch=(NO_OF_TRAINING_IMAGES // BATCH_SIZE),
+                              validation_data=val_gen, validation_steps=(NO_OF_VAL_IMAGES // BATCH_SIZE))
+    # callbacks=callbacks_list)
+    m.save('MoreData_SGD015_batch16_newIMG.h5')
+
+    print(history.history.keys())
+    #  "Accuracy"
+    plt.plot(history.history['acc'])
+    plt.plot(history.history['val_acc'])
+    plt.title('model accuracy')
+    plt.ylabel('accuracy')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'validation'], loc='upper left')
+    plt.show()
+    # "Loss"
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('model loss')
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'validation'], loc='upper left')
+    plt.show()

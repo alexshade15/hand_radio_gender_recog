@@ -2,7 +2,7 @@ import tensorflow
 from tensorflow.compat.v2.keras.layers import *
 from tensorflow.compat.v2.keras.models import Model
 from tensorflow.compat.v2.keras.optimizers import *
-from keras.preprocessing.image import ImageDataGenerator
+from tensorflow.compat.v2.keras.preprocessing.image import ImageDataGenerator
 import os
 import cv2
 import random

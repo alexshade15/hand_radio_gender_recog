@@ -3,11 +3,13 @@ from tensorflow.compat.v2.keras.layers import *
 from tensorflow.compat.v2.keras.models import Model
 from tensorflow.compat.v2.keras.optimizers import *
 from tensorflow.compat.v2.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.compat.v2.keras.wrappers.scikit_learn import KerasClassifier
 import os
 import cv2
 import random
 import numpy as np
 from matplotlib import pyplot as plt
+from sklearn.model_selection import GridSearchCV
 
 
 def data_gen(img_folder, mask_folder, batch_size):
@@ -33,6 +35,7 @@ def data_gen(img_folder, mask_folder, batch_size):
             c = 0
             random.shuffle(n1)
         yield img, mask
+
 
 # tensorflow.debugging.set_log_device_placement(True)
 def unet(pretrained_weights=None, input_size=(512, 512, 1)):
@@ -68,7 +71,8 @@ def unet(pretrained_weights=None, input_size=(512, 512, 1)):
     merge8 = concatenate([conv2, up8], axis=3)
     conv8 = Conv2D(128, 3, activation='relu', padding='same', kernel_initializer='he_normal')(merge8)
     conv8 = Conv2D(128, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv8)
-    up9 = Conv2D(64, 2, activation='relu', padding='same', kernel_initializer='he_normal')(UpSampling2D(size=(2, 2))(conv8))
+    up9 = Conv2D(64, 2, activation='relu', padding='same', kernel_initializer='he_normal')(
+        UpSampling2D(size=(2, 2))(conv8))
     merge9 = concatenate([conv1, up9], axis=3)
     conv9 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(merge9)
     conv9 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv9)
@@ -78,41 +82,76 @@ def unet(pretrained_weights=None, input_size=(512, 512, 1)):
     m.compile(optimizer=SGD(lr=0.015), loss='binary_crossentropy', metrics=['accuracy'])
     return m
 
-train_datagen = ImageDataGenerator(rescale=1. / 255)
-val_datagen = ImageDataGenerator()
-BATCH_SIZE = 16
-train_image_generator = train_datagen.flow_from_directory('/data/masked_hands/train_frames', batch_size=BATCH_SIZE)
-train_mask_generator = train_datagen.flow_from_directory('/data/masked_hands/train_masks', batch_size=BATCH_SIZE)
-val_image_generator = val_datagen.flow_from_directory('/data/masked_hands/val_frames', batch_size=BATCH_SIZE)
-val_mask_generator = val_datagen.flow_from_directory('/data/masked_hands/val_masks', batch_size=BATCH_SIZE)
-train_generator = zip(train_image_generator, train_mask_generator)
-val_generator = zip(val_image_generator, val_mask_generator)
-train_frame_path = '/data/masked_hands/train_frames/train'
-train_mask_path = '/data/masked_hands/train_masks/train'
-val_frame_path = '/data/masked_hands/val_frames/val'
-val_mask_path = '/data/masked_hands/val_masks/val'
-train_gen = data_gen(train_frame_path, train_mask_path, batch_size=BATCH_SIZE)
-val_gen = data_gen(val_frame_path, val_mask_path, batch_size=BATCH_SIZE)
-NO_OF_TRAINING_IMAGES = len(os.listdir('/data/masked_hands/train_frames/train'))
-NO_OF_VAL_IMAGES = len(os.listdir('/data/masked_hands/val_frames/val'))
-NO_OF_EPOCHS = 25
-weights_path = './weights_path/'
-m = unet()
-history = m.fit_generator(train_gen, epochs=NO_OF_EPOCHS, steps_per_epoch=(NO_OF_TRAINING_IMAGES // BATCH_SIZE),
-                          validation_data=val_gen, validation_steps=(NO_OF_VAL_IMAGES // BATCH_SIZE))
+def gridSearch(batch_size = 4):
+    train_datagen = ImageDataGenerator(rescale=1. / 255)
+    # val_datagen = ImageDataGenerator()
+    train_frame_path = '/data/segmentation/train_frames/'
+    train_mask_path = '/data/segmentation/train_masks/'
+    # val_frame_path = '/data/segmentation/val_frames/'
+    # val_mask_path = '/data/segmentation/val_masks/'
+    test_frame_path = '/data/segmentation/test_frames/'
+    test_mask_path = '/data/segmentation/test_masks/'
+    # load and iterate training dataset
+    train_X = train_datagen.flow_from_directory(train_frame_path, class_mode='binary', batch_size=batch_size)
+    train_Y = train_datagen.flow_from_directory(train_mask_path, class_mode='binary', batch_size=batch_size)
 
-print(history.history.keys())
-plt.plot(history.history['acc'])
-plt.plot(history.history['val_acc'])
-plt.title('model accuracy')
-plt.ylabel('accuracy')
-plt.xlabel('epoch')
-plt.legend(['train', 'validation'], loc='upper left')
-plt.show()
-plt.plot(history.history['loss'])
-plt.plot(history.history['val_loss'])
-plt.title('model loss')
-plt.ylabel('loss')
-plt.xlabel('epoch')
-plt.legend(['train', 'validation'], loc='upper left')
-plt.show()
+    m = unet()
+    model = KerasClassifier(build_fn=m, epochs=25, batch_size=batch_size, verbose=0)
+
+    optimizer = ['SGD', 'RMSprop', 'Adagrad', 'Adadelta', 'Adam', 'Adamax', 'Nadam']
+    # learn_rate = [0.001, 0.01, 0.1, 0.2, 0.3]
+    # momentum = [0.0, 0.2, 0.4, 0.6, 0.8, 0.9]
+    # param_grid = dict(learn_rate=learn_rate, momentum=momentum)
+    param_grid = dict(optimizer=optimizer)
+    grid = GridSearchCV(estimator=model, param_grid=param_grid, n_jobs=-1, cv=3)
+    grid_result = grid.fit(train_X, train_Y)
+
+    # summarize results
+    print("Best: %f using %s" % (grid_result.best_score_, grid_result.best_params_))
+    means = grid_result.cv_results_['mean_test_score']
+    stds = grid_result.cv_results_['std_test_score']
+    params = grid_result.cv_results_['params']
+    for mean, stdev, param in zip(means, stds, params):
+        print("%f (%f) with: %r" % (mean, stdev, param))
+
+
+
+if __name__ == "__main__":
+    # train_datagen = ImageDataGenerator(rescale=1. / 255)
+    # val_datagen = ImageDataGenerator()
+    BATCH_SIZE = 4
+    # train_image_generator = train_datagen.flow_from_directory('/data/masked_hands/train_frames', batch_size=BATCH_SIZE)
+    # train_mask_generator = train_datagen.flow_from_directory('/data/masked_hands/train_masks', batch_size=BATCH_SIZE)
+    # val_image_generator = val_datagen.flow_from_directory('/data/masked_hands/val_frames', batch_size=BATCH_SIZE)
+    # val_mask_generator = val_datagen.flow_from_directory('/data/masked_hands/val_masks', batch_size=BATCH_SIZE)
+    # train_generator = zip(train_image_generator, train_mask_generator)
+    # val_generator = zip(val_image_generator, val_mask_generator)
+    train_frame_path = '/data/masked_hands/train_frames/train'
+    train_mask_path = '/data/masked_hands/train_masks/train'
+    val_frame_path = '/data/masked_hands/val_frames/val'
+    val_mask_path = '/data/masked_hands/val_masks/val'
+    train_gen = data_gen(train_frame_path, train_mask_path, batch_size=BATCH_SIZE)
+    val_gen = data_gen(val_frame_path, val_mask_path, batch_size=BATCH_SIZE)
+    NO_OF_TRAINING_IMAGES = len(os.listdir('/data/masked_hands/train_frames/train'))
+    NO_OF_VAL_IMAGES = len(os.listdir('/data/masked_hands/val_frames/val'))
+    NO_OF_EPOCHS = 75
+    weights_path = './weights_path/'
+    m = unet()
+    history = m.fit_generator(train_gen, epochs=NO_OF_EPOCHS, steps_per_epoch=(NO_OF_TRAINING_IMAGES // BATCH_SIZE),
+                              validation_data=val_gen, validation_steps=(NO_OF_VAL_IMAGES // BATCH_SIZE))
+
+# print(history.history.keys())
+# plt.plot(history.history['accuracy'])
+# plt.plot(history.history['val_accuracy'])
+# plt.title('model accuracy')
+# plt.ylabel('accuracy')
+# plt.xlabel('epoch')
+# plt.legend(['train', 'validation'], loc='upper left')
+# plt.show()
+# plt.plot(history.history['loss'])
+# plt.plot(history.history['val_loss'])
+# plt.title('model loss')
+# plt.ylabel('loss')
+# plt.xlabel('epoch')
+# plt.legend(['train', 'validation'], loc='upper left')
+# plt.show()

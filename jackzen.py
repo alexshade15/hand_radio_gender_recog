@@ -85,7 +85,6 @@ def unet(pretrained_weights=None, input_size=(512, 512, 1)):
 def loadImages(path):
     data = []
     for img_name in os.listdir(path):
-        print(img_name)
         img = image.load_img(path + img_name, target_size=(512, 512, 1), grayscale=True)
         img = image.img_to_array(img)
         img = img / 255

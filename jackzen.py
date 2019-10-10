@@ -2,7 +2,7 @@ import tensorflow
 from tensorflow.compat.v2.keras.layers import *
 from tensorflow.compat.v2.keras.models import Model
 from tensorflow.compat.v2.keras.optimizers import *
-from tensorflow.compat.v2.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.compat.v2.keras.preprocessing import image
 from tensorflow.compat.v2.keras.wrappers.scikit_learn import KerasClassifier
 import os
 import cv2
@@ -82,8 +82,18 @@ def unet(pretrained_weights=None, input_size=(512, 512, 1)):
     m.compile(optimizer=SGD(lr=0.015), loss='binary_crossentropy', metrics=['accuracy'])
     return m
 
+def loadImages(path):
+    data = []
+    for img_name in os.listdir(path):
+        print(img_name)
+        img = image.load_img(path + img_name, target_size=(512, 512, 1), grayscale=True)
+        img = image.img_to_array(img)
+        img = img / 255
+        data.append(img)
+    return np.array(data)
+
 def gridSearch(batch_size = 4):
-    train_datagen = ImageDataGenerator(rescale=1. / 255)
+    # train_datagen = ImageDataGenerator(rescale=1. / 255)
     # val_datagen = ImageDataGenerator()
     train_frame_path = '/data/segmentation/train_frames/'
     train_mask_path = '/data/segmentation/train_masks/'
@@ -91,9 +101,11 @@ def gridSearch(batch_size = 4):
     # val_mask_path = '/data/segmentation/val_masks/'
     test_frame_path = '/data/segmentation/test_frames/'
     test_mask_path = '/data/segmentation/test_masks/'
-    # load and iterate training dataset
-    train_X = train_datagen.flow_from_directory(train_frame_path, class_mode='binary', batch_size=batch_size)
-    train_Y = train_datagen.flow_from_directory(train_mask_path, class_mode='binary', batch_size=batch_size)
+
+    train_X = loadImages(train_frame_path)
+    train_Y = loadImages(train_mask_path)
+    test_X = loadImages(test_frame_path)
+    test_Y = loadImages(test_mask_path)
 
     m = unet()
     model = KerasClassifier(build_fn=m, epochs=25, batch_size=batch_size, verbose=0)

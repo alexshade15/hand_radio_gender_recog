@@ -116,7 +116,7 @@ def gridSearch(batch_size=4):
     # momentum = [0.0, 0.2, 0.4, 0.6, 0.8, 0.9]
     # param_grid = dict(learn_rate=learn_rate, momentum=momentum)
     param_grid = dict(optimizer=optimizer)
-    grid = GridSearchCV(estimator=model, param_grid=param_grid, n_jobs=-1, cv=3)
+    grid = GridSearchCV(estimator=model, param_grid=param_grid, n_jobs=1, cv=3)
     grid_result = grid.fit(train_X, train_Y)
 
     # summarize results

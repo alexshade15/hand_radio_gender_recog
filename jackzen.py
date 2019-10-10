@@ -82,16 +82,18 @@ def unet(pretrained_weights=None, input_size=(512, 512, 1)):
     m.compile(optimizer=SGD(lr=0.015), loss='binary_crossentropy', metrics=['accuracy'])
     return m
 
+
 def loadImages(path):
     data = []
     for img_name in os.listdir(path):
-        img = image.load_img(path + img_name, target_size=(512, 512, 1), grayscale=True)
+        img = image.load_img(path + img_name, target_size=(512, 512, 1))
         img = image.img_to_array(img)
         img = img / 255
         data.append(img)
     return np.array(data)
 
-def gridSearch(batch_size = 4):
+
+def gridSearch(batch_size=4):
     # train_datagen = ImageDataGenerator(rescale=1. / 255)
     # val_datagen = ImageDataGenerator()
     train_frame_path = '/data/segmentation/train_frames/'
@@ -124,7 +126,6 @@ def gridSearch(batch_size = 4):
     params = grid_result.cv_results_['params']
     for mean, stdev, param in zip(means, stds, params):
         print("%f (%f) with: %r" % (mean, stdev, param))
-
 
 
 if __name__ == "__main__":

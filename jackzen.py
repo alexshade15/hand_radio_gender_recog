@@ -152,6 +152,7 @@ def gridSearch(batch_size=4):
             score = m.evaluate_generator(test_gen, NO_OF_TEST_IMAGES // BATCH_SIZE)
             histories.append(history)
             scores.append(score)
+        return (histories, scores)
 
 
 if __name__ == "__main__":

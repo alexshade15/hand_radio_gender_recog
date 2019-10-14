@@ -124,34 +124,41 @@ def gridSearch(batch_size=4):
         print("%f (%f) with: %r" % (mean, stdev, param))
 
 def myGrid():
-    optimizer = ['SGD', 'RMSprop', 'Adagrad', 'Adadelta', 'Adam', 'Adamax', 'Nadam']
+    # optimizer = ['SGD', 'RMSprop', 'Adagrad', 'Adadelta', 'Adam', 'Adamax', 'Nadam']
+    # [[0.22073517739772797, 0.9589321], [3.4372099876403808, 0.7771452], [3.537072992324829, 0.77067107],
+    #  [0.4104248046875, 0.7677431], [3.5604740619659423, 0.76915395], [0.5666816473007202, 0.77221453],
+    #  [3.537072849273682, 0.77067107]]
+
+    learn_rate = [0.001, 0.01, 0.1, 0.2, 0.3]
+    momentum = [0.0, 0.2, 0.4, 0.6, 0.8, 0.9]
     histories = []
     scores = []
-    for opt in optimizer:
-        m = unet()
-        m.compile(optimizer=opt, loss='binary_crossentropy', metrics=['accuracy'])
+    for lr in learn_rate:
+        for mom in momentum:
+            m = unet()
+            m.compile(optimizer=SGD(learning_rate=lr, momentum=mom), loss='binary_crossentropy', metrics=['accuracy'])
 
-        BATCH_SIZE = 4
-        train_frame_path = '/data/segmentation2/train_frames/'
-        train_mask_path = '/data/segmentation2/train_masks/'
-        val_frame_path = '/data/segmentation2/val_frames/'
-        val_mask_path = '/data/segmentation2/val_masks/'
-        test_frame_path = '/data/segmentation2/test_frames/'
-        test_mask_path = '/data/segmentation2/test_masks/'
-        train_gen = data_gen(train_frame_path, train_mask_path, batch_size=BATCH_SIZE)
-        val_gen = data_gen(val_frame_path, val_mask_path, batch_size=BATCH_SIZE)
-        test_gen = data_gen(test_frame_path, test_mask_path, batch_size=BATCH_SIZE)
-        NO_OF_TRAINING_IMAGES = len(os.listdir(train_frame_path))
-        NO_OF_VAL_IMAGES = len(os.listdir(val_frame_path))
-        NO_OF_TEST_IMAGES = len(os.listdir(test_frame_path))
-        NO_OF_EPOCHS = 25
-        
-        history = m.fit_generator(train_gen, epochs=NO_OF_EPOCHS,
-                                  steps_per_epoch=(NO_OF_TRAINING_IMAGES // BATCH_SIZE),
-                                  validation_data=val_gen, validation_steps=(NO_OF_VAL_IMAGES // BATCH_SIZE))
-        score = m.evaluate_generator(test_gen, NO_OF_TEST_IMAGES // BATCH_SIZE)
-        histories.append(history)
-        scores.append(score)
+            BATCH_SIZE = 4
+            train_frame_path = '/data/segmentation2/train_frames/'
+            train_mask_path = '/data/segmentation2/train_masks/'
+            val_frame_path = '/data/segmentation2/val_frames/'
+            val_mask_path = '/data/segmentation2/val_masks/'
+            test_frame_path = '/data/segmentation2/test_frames/'
+            test_mask_path = '/data/segmentation2/test_masks/'
+            train_gen = data_gen(train_frame_path, train_mask_path, batch_size=BATCH_SIZE)
+            val_gen = data_gen(val_frame_path, val_mask_path, batch_size=BATCH_SIZE)
+            test_gen = data_gen(test_frame_path, test_mask_path, batch_size=BATCH_SIZE)
+            NO_OF_TRAINING_IMAGES = len(os.listdir(train_frame_path))
+            NO_OF_VAL_IMAGES = len(os.listdir(val_frame_path))
+            NO_OF_TEST_IMAGES = len(os.listdir(test_frame_path))
+            NO_OF_EPOCHS = 25
+
+            history = m.fit_generator(train_gen, epochs=NO_OF_EPOCHS,
+                                      steps_per_epoch=(NO_OF_TRAINING_IMAGES // BATCH_SIZE),
+                                      validation_data=val_gen, validation_steps=(NO_OF_VAL_IMAGES // BATCH_SIZE))
+            score = m.evaluate_generator(test_gen, NO_OF_TEST_IMAGES // BATCH_SIZE)
+            histories.append(history)
+            scores.append(score)
     return (histories, scores)
 
 

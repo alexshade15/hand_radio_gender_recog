@@ -79,7 +79,7 @@ def unet(pretrained_weights=None, input_size=(512, 512, 1)):
     conv9 = Conv2D(2, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv9)
     conv10 = Conv2D(1, 1, activation='sigmoid')(conv9)
     m = Model(inputs=inputs, outputs=conv10)
-    m.compile(optimizer=SGD(lr=0.015), loss='binary_crossentropy', metrics=['accuracy'])
+    # m.compile(optimizer=SGD(lr=0.015), loss='binary_crossentropy', metrics=['accuracy'])
     return m
 
 
@@ -123,6 +123,36 @@ def gridSearch(batch_size=4):
     for mean, stdev, param in zip(means, stds, params):
         print("%f (%f) with: %r" % (mean, stdev, param))
 
+    def myGrid():
+        optimizer = ['SGD', 'RMSprop', 'Adagrad', 'Adadelta', 'Adam', 'Adamax', 'Nadam']
+        histories = []
+        scores = []
+        for opt in optimizer:
+            m = unet()
+            m.compile(optimizer=opt, loss='binary_crossentropy', metrics=['accuracy'])
+
+            BATCH_SIZE = 4
+            train_frame_path = '/data/segmentation2/train_frames/'
+            train_mask_path = '/data/segmentation2/train_masks/'
+            val_frame_path = '/data/segmentation2/val_frames/'
+            val_mask_path = '/data/segmentation2/val_masks/'
+            test_frame_path = '/data/segmentation2/test_frames/'
+            test_mask_path = '/data/segmentation2/test_masks/'
+            train_gen = data_gen(train_frame_path, train_mask_path, batch_size=BATCH_SIZE)
+            val_gen = data_gen(val_frame_path, val_mask_path, batch_size=BATCH_SIZE)
+            test_gen = data_gen(test_frame_path, test_mask_path, batch_size=BATCH_SIZE)
+            NO_OF_TRAINING_IMAGES = len(os.listdir(train_frame_path))
+            NO_OF_VAL_IMAGES = len(os.listdir(val_frame_path))
+            NO_OF_TEST_IMAGES = len(os.listdir(test_frame_path))
+            NO_OF_EPOCHS = 25
+            m = unet()
+            history = m.fit_generator(train_gen, epochs=NO_OF_EPOCHS,
+                                      steps_per_epoch=(NO_OF_TRAINING_IMAGES // BATCH_SIZE),
+                                      validation_data=val_gen, validation_steps=(NO_OF_VAL_IMAGES // BATCH_SIZE))
+            score = m.evaluate_generator(test_gen, NO_OF_TEST_IMAGES // BATCH_SIZE)
+            histories.append(history)
+            scores.append(score)
+
 
 if __name__ == "__main__":
     # train_datagen = ImageDataGenerator(rescale=1. / 255)
@@ -153,7 +183,7 @@ if __name__ == "__main__":
                               validation_data=val_gen, validation_steps=(NO_OF_VAL_IMAGES // BATCH_SIZE))
 
     # scores = m.predict_generator(test_frame_path, NO_OF_TEST_IMAGES // BATCH_SIZE, workers=5)
-    score = m.evaluate_generator(test_frame_path, NO_OF_TEST_IMAGES // BATCH_SIZE)
+    score = m.evaluate_generator(test_gen, NO_OF_TEST_IMAGES // BATCH_SIZE)
     print("Loss: ", score[0], "Accuracy: ", score[1])
 
 # print(history.history.keys())

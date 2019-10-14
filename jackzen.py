@@ -145,7 +145,7 @@ def myGrid():
         NO_OF_VAL_IMAGES = len(os.listdir(val_frame_path))
         NO_OF_TEST_IMAGES = len(os.listdir(test_frame_path))
         NO_OF_EPOCHS = 25
-        m = unet()
+        
         history = m.fit_generator(train_gen, epochs=NO_OF_EPOCHS,
                                   steps_per_epoch=(NO_OF_TRAINING_IMAGES // BATCH_SIZE),
                                   validation_data=val_gen, validation_steps=(NO_OF_VAL_IMAGES // BATCH_SIZE))

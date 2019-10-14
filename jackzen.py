@@ -150,10 +150,10 @@ if __name__ == "__main__":
     weights_path = './weights_path/'
     m = unet()
     history = m.fit_generator(train_gen, epochs=NO_OF_EPOCHS, steps_per_epoch=(NO_OF_TRAINING_IMAGES // BATCH_SIZE),
-                              validation_data=val_gen, validation_steps=(NO_OF_VAL_IMAGES // BATCH_SIZE), workers=5)
+                              validation_data=val_gen, validation_steps=(NO_OF_VAL_IMAGES // BATCH_SIZE))
 
     # scores = m.predict_generator(test_frame_path, NO_OF_TEST_IMAGES // BATCH_SIZE, workers=5)
-    score = m.evaluate_generator(test_frame_path, NO_OF_TEST_IMAGES // BATCH_SIZE, workers=5)
+    score = m.evaluate_generator(test_frame_path, NO_OF_TEST_IMAGES // BATCH_SIZE)
     print("Loss: ", score[0], "Accuracy: ", score[1])
 
 # print(history.history.keys())

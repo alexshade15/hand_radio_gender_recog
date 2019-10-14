@@ -94,12 +94,8 @@ def loadImages(path):
 
 
 def gridSearch(batch_size=4):
-    # train_datagen = ImageDataGenerator(rescale=1. / 255)
-    # val_datagen = ImageDataGenerator()
     train_frame_path = '/data/segmentation/train_frames/'
     train_mask_path = '/data/segmentation/train_masks/'
-    # val_frame_path = '/data/segmentation/val_frames/'
-    # val_mask_path = '/data/segmentation/val_masks/'
     test_frame_path = '/data/segmentation/test_frames/'
     test_mask_path = '/data/segmentation/test_masks/'
 
@@ -138,19 +134,27 @@ if __name__ == "__main__":
     # val_mask_generator = val_datagen.flow_from_directory('/data/masked_hands/val_masks', batch_size=BATCH_SIZE)
     # train_generator = zip(train_image_generator, train_mask_generator)
     # val_generator = zip(val_image_generator, val_mask_generator)
-    train_frame_path = '/data/masked_hands/train_frames/train'
-    train_mask_path = '/data/masked_hands/train_masks/train'
-    val_frame_path = '/data/masked_hands/val_frames/val'
-    val_mask_path = '/data/masked_hands/val_masks/val'
+    train_frame_path = '/data/segmentation2/train_frames/'
+    train_mask_path = '/data/segmentation2/train_masks/'
+    val_frame_path = '/data/segmentation2/val_frames/'
+    val_mask_path = '/data/segmentation2/val_masks/'
+    test_frame_path = '/data/segmentation2/test_frames/'
+    test_mask_path = '/data/segmentation2/test_masks/'
     train_gen = data_gen(train_frame_path, train_mask_path, batch_size=BATCH_SIZE)
     val_gen = data_gen(val_frame_path, val_mask_path, batch_size=BATCH_SIZE)
-    NO_OF_TRAINING_IMAGES = len(os.listdir('/data/masked_hands/train_frames/train'))
-    NO_OF_VAL_IMAGES = len(os.listdir('/data/masked_hands/val_frames/val'))
-    NO_OF_EPOCHS = 75
+    test_gen = data_gen(test_frame_path, test_mask_path, batch_size=BATCH_SIZE)
+    NO_OF_TRAINING_IMAGES = len(os.listdir(train_frame_path))
+    NO_OF_VAL_IMAGES = len(os.listdir(val_frame_path))
+    NO_OF_TEST_IMAGES = len(os.listdir(test_frame_path))
+    NO_OF_EPOCHS = 25
     weights_path = './weights_path/'
     m = unet()
     history = m.fit_generator(train_gen, epochs=NO_OF_EPOCHS, steps_per_epoch=(NO_OF_TRAINING_IMAGES // BATCH_SIZE),
-                              validation_data=val_gen, validation_steps=(NO_OF_VAL_IMAGES // BATCH_SIZE))
+                              validation_data=val_gen, validation_steps=(NO_OF_VAL_IMAGES // BATCH_SIZE), workers=5)
+
+    # scores = m.predict_generator(test_frame_path, NO_OF_TEST_IMAGES // BATCH_SIZE, workers=5)
+    score = m.evaluate_generator(test_frame_path, NO_OF_TEST_IMAGES // BATCH_SIZE, workers=5)
+    print("Loss: ", score[0], "Accuracy: ", score[1])
 
 # print(history.history.keys())
 # plt.plot(history.history['accuracy'])
@@ -167,3 +171,5 @@ if __name__ == "__main__":
 # plt.xlabel('epoch')
 # plt.legend(['train', 'validation'], loc='upper left')
 # plt.show()
+
+# https://drive.google.com/file/d/1NB6ofDyoW5gfcC8q2512loCz0n8EZEIzoq/view?usp=sharing

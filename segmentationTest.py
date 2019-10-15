@@ -48,15 +48,52 @@ def predict(n, index, threshold):
     ptt = (pt > threshold).astype(np.uint8)
     # plot_sample(train_frame_img, train_masks_img, preds_train, preds_train_t)
     plot_sample(tfi, tfi, pt, ptt)
-
     return ptt
+
+
+def generateMasks():
+    m = model.unet()
+    m.load_weights('ultiSeg.h5')
+
+    images_folder = '/data/normalized/training'
+    images = os.listdir(images_folder)
+    i = 1
+    num_images = len(images)
+
+    for image in images:
+        name, ext = image.split(".")
+
+        if ext == "png":
+            print("\n\n", image, "---", str(i)+"/"+str(num_images), "---", str(int(i/num_images)))
+            i += 1
+            img_input = cv2.imread(images_folder + '/' + image, cv2.IMREAD_GRAYSCALE) / 255.
+            img_input = cv2.resize(img_input, (512, 512))
+            img_input = img_input.reshape(1, 512, 512, 1)
+
+            img_pred = m.predict(img_input, verbose=1)
+            img_mask = (img_pred > 0.3).astype(np.uint8)
+
+            mask = img_mask.squeeze() * 255
+            contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            c = max(contours, key=cv2.contourArea)
+            # myMask2 = cv2.merge(mv=[mask, mask, mask])
+            my_mask = cv2.merge(mv=[mask, mask, mask])
+            clen = cv2.arcLength(c, True)
+            for contour in contours:
+                contourlen = cv2.arcLength(contour, True)
+                if contourlen < clen:
+                    cv2.drawContours(my_mask, [c], -1, 0, -1)
+            my_mask = cv2.bitwise_not(my_mask)
+            out_mask = cv2.bitwise_and(my_mask, my_mask, mask=mask)
+            cv2.imwrite('./data/normalized_masks/training/' + image, out_mask)
+
 
 if __name__ == "__main__":
     m = model.unet()
     m.load_weights('MoreData_SGD015_batch16_newIMG.h5')
 
-    test_folder_frame = 'normalized/training'
-    test_folder_masks = 'normalized/training'
+    test_folder_frame = './data/normalized/training'
+    test_folder_masks = './data/normalized/training'
 
     # test_folder_frame = 'masked_hands/train_frames/train'
     # test_folder_masks = 'masked_hands/train_masks/train'
@@ -65,7 +102,7 @@ if __name__ == "__main__":
     # test_folder_masks = 'dataForSegmentation'
     n1 = os.listdir(test_folder_frame)
     i = 1000
-    # name, ext = n1[i].split(".")
+    name, ext = n1[i].split(".")
     # _, number = name.split("s")
 
     train_frame_img = cv2.imread(test_folder_frame + '/' + n1[i], cv2.IMREAD_GRAYSCALE) / 255.
@@ -81,15 +118,8 @@ if __name__ == "__main__":
     # plot_sample(train_frame_img, train_masks_img, preds_train, preds_train_t)
     plot_sample(train_frame_img, train_frame_img, preds_train, preds_train_t)
 
-    # import os
-    # path = "masked_hands/train_masks/train/"
-    # for filename in os.listdir(path):
-    #     number, _ = filename.split("_")
-    #     dst = number + ".png"
-    #     src = path + filename
-    #     dst = path + dst
-    #     os.rename(src, dst)
-    
+    # cv2.imwrite('./temp/' + n1[i], preds_train_t.squeeze() * 255)
+
     # MODELS
     # DO    Model.h5
     # NO    Model_sgd.h5
@@ -99,11 +129,3 @@ if __name__ == "__main__":
     # NO    MoreData_SGD01_batch8.h5
     # BEST?    MoreData_SGD01_batch16.h5
     # BEST!    MoreData_SGD015_batch16_newIMG.h5
-
-
-    # import io
-    # from PIL import Image
-    #
-    #
-    # image = Image.open(io.BytesIO(preds_train_t))
-    # image.save("imgTEST")

@@ -125,4 +125,3 @@ dmypy.json
 .DS_Store
 *.png
 *.h5
-*.csv

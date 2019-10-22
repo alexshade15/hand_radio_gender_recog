@@ -51,11 +51,11 @@ def predict(n, index, threshold):
     return ptt
 
 
-def generateMasks():
+def generateMasks(folder):
     m = model.unet()
-    m.load_weights('ultiSeg.h5')
+    m.load_weights('/data/ultiSeg.h5')
 
-    images_folder = '/data/normalized/training'
+    images_folder = '/data/normalized/' + folder
     images = os.listdir(images_folder)
     i = 1
     num_images = len(images)
@@ -64,7 +64,7 @@ def generateMasks():
         name, ext = image.split(".")
 
         if ext == "png":
-            print("\n\n", image, "---", str(i) + "/" + str(num_images), "---", str(int(i / num_images)))
+            print("\n\n", image, "---", str(i) + "/" + str(num_images), "---", "%" + str(int(100 * i / num_images)))
             i += 1
             img_input = cv2.imread(images_folder + '/' + image, cv2.IMREAD_GRAYSCALE) / 255.
             img_input = cv2.resize(img_input, (512, 512))
@@ -85,7 +85,7 @@ def generateMasks():
                     cv2.drawContours(my_mask, [c], -1, 0, -1)
             my_mask = cv2.bitwise_not(my_mask)
             out_mask = cv2.bitwise_and(my_mask, my_mask, mask=mask)
-            cv2.imwrite('./data/normalized_masks/training/' + image, out_mask)
+            cv2.imwrite('/data/normalized_masks/' + folder + '/' + image, out_mask)
 
 
 def maskApply(imgPath, maskPath, dataset_type):

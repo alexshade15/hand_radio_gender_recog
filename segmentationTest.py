@@ -64,7 +64,7 @@ def generateMasks():
         name, ext = image.split(".")
 
         if ext == "png":
-            print("\n\n", image, "---", str(i)+"/"+str(num_images), "---", str(int(i/num_images)))
+            print("\n\n", image, "---", str(i) + "/" + str(num_images), "---", str(int(i / num_images)))
             i += 1
             img_input = cv2.imread(images_folder + '/' + image, cv2.IMREAD_GRAYSCALE) / 255.
             img_input = cv2.resize(img_input, (512, 512))
@@ -86,6 +86,24 @@ def generateMasks():
             my_mask = cv2.bitwise_not(my_mask)
             out_mask = cv2.bitwise_and(my_mask, my_mask, mask=mask)
             cv2.imwrite('./data/normalized_masks/training/' + image, out_mask)
+
+
+def maskApply(imgPath, maskPath, dataset_type):
+    import sys
+    img_list = os.listdir(imgPath)
+    mask_list = os.listdir(maskPath)
+    for img in img_list:
+        number, _ = img.split(".")
+        mask_name = "masks" + number + ".png"
+        if mask_name in mask_list:
+            image = cv2.imread(imgPath + img)
+            mask = cv2.imread(maskPath + mask_name, cv2.IMREAD_GRAYSCALE)
+            res = cv2.bitwise_and(image, image, mask=mask)
+            clahe = cv2.createCLAHE(clipLimit=3, tileGridSize=(64, 64))
+            image = clahe.apply(res)
+            cv2.imwrite('/data/handset/' + dataset_type + '/' + img, image)
+        else:
+            print("Errore, " + img + " non presente nelle maschere.", file=sys.stderr)
 
 
 if __name__ == "__main__":

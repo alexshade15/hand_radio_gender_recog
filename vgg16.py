@@ -1,14 +1,14 @@
-from tensorflow.compat.v2.keras.models import Sequential
-from tensorflow.compat.v2.keras.layers import *
-from tensorflow.compat.v2.optimizers import *
-from tensorflow.compat.v2.keras.applications.vgg16 import VGG16
-from tensorflow.compat.v2.keras.preprocessing.image import ImageDataGenerator
+# from tensorflow.compat.v2.keras.models import Sequential
+# from tensorflow.compat.v2.keras.layers import *
+# from tensorflow.compat.v2.optimizers import *
+# from tensorflow.compat.v2.keras.applications.vgg16 import VGG16
+# from tensorflow.compat.v2.keras.preprocessing.image import ImageDataGenerator
 
-# from keras.models import Sequential
-# from keras.layers import *
-# from keras.optimizers import *
-# from keras.applications.vgg16 import VGG16
-# from keras.preprocessing.image import ImageDataGenerator
+from keras.models import Sequential
+from keras.layers import *
+from keras.optimizers import *
+from keras.applications.vgg16 import VGG16
+from keras.preprocessing.image import ImageDataGenerator
 
 from sklearn.preprocessing import LabelBinarizer
 import numpy as np
@@ -163,10 +163,8 @@ model.summary()
 
 model.compile(loss='binary_crossentropy', optimizer=SGD(lr=1e-4), metrics=['accuracy'])
 
-history = model.fit_generator(trainGen, epochs=NUM_EPOCHS, verbose=1,
-                              steps_per_epoch=(NUM_TRAIN_IMAGES // BATCH_SIZE),
-                              validation_data=valGen,
-                              validation_steps=(NUM_VAL_IMAGES // BATCH_SIZE))
+history = model.fit_generator(trainGen, steps_per_epoch=NUM_TRAIN_IMAGES // BATCH_SIZE, validation_data=valGen,
+                              validation_steps=NUM_VAL_IMAGES // BATCH_SIZE, epochs=NUM_EPOCHS, verbose=1)
 
 score = model.evaluate_generator(testGen, NUM_TEST_IMAGES // BATCH_SIZE)
 

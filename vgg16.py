@@ -1,20 +1,22 @@
-# from tensorflow.compat.v2.keras.models import Sequential
-# from tensorflow.compat.v2.keras.layers import *
-# from tensorflow.compat.v2.optimizers import *
-# from tensorflow.compat.v2.keras.applications.vgg16 import VGG16
-# from tensorflow.compat.v2.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.compat.v2.keras.models import Sequential
+from tensorflow.compat.v2.keras.layers import *
+from tensorflow.compat.v2.keras.optimizers import *
+from tensorflow.compat.v2.keras.applications.vgg16 import VGG16
+from tensorflow.compat.v2.keras.preprocessing.image import ImageDataGenerator
 
-from keras.models import Sequential
-from keras.layers import *
-from keras.optimizers import *
-from keras.applications.vgg16 import VGG16
-from keras.preprocessing.image import ImageDataGenerator
+# from keras.models import Sequential
+# from keras.layers import *
+# from keras.optimizers import *
+# from keras.applications.vgg16 import VGG16
+# from keras.preprocessing.image import ImageDataGenerator
 
 from sklearn.preprocessing import LabelBinarizer
 import numpy as np
 import os
 import random
 import cv2
+import traceback
+import sys
 
 
 def csv_image_generator(dictLabs, imgPath, batch_size, lb, mode="train", aug=None):
@@ -28,8 +30,7 @@ def csv_image_generator(dictLabs, imgPath, batch_size, lb, mode="train", aug=Non
             train_img = cv2.imread(imgPath + '/' + n1[i])
             train_img = cv2.resize(train_img / 255., (512, 512))  # Read an image from folder and resize
             train_img = train_img.reshape(512, 512, 3)
-            name, ext = n1[i].split(".")
-            _, number = name.split("s")
+            number, ext = n1[i].split(".")
             img[i - c] = train_img  # add to array - img[0], img[1], and so on.
             labels.append(dictLabs[number])
         c += batch_size
@@ -87,86 +88,104 @@ def csv_image_generator(dictLabs, imgPath, batch_size, lb, mode="train", aug=Non
     #         yield (np.array(images), labels)
 
 
-# initialize the paths to our training and testing CSV files
-trainCsvPath = "/data/train.csv"
-valCsvPath = "/data/val.csv"
-trainPath = '/data/handset/train/'
-valPath = '/data/handset/val/'
-testPath = '/data/handset/test/'
+def main(epoch=10, bs=64):
+    try:
+        # initialize the paths to our training and testing CSV files
+        trainCsvPath = "/data/train.csv"
+        valCsvPath = "/data/val.csv"
+        trainPath = '/data/handset/train/'
+        valPath = '/data/handset/val/'
+        testPath = '/data/handset/test/'
 
-# initialize the number of epochs to train for and batch size
-NUM_EPOCHS = 75
-BATCH_SIZE = 32
-image_size = 512
+        # initialize the number of epochs to train for and batch size
+        NUM_EPOCHS = epoch
+        BATCH_SIZE = bs
+        image_size = 512
 
-# initialize the total number of training and testing image
-NUM_TRAIN_IMAGES = len(os.listdir(trainPath))
-NUM_VAL_IMAGES = len(os.listdir(valPath))
-NUM_TEST_IMAGES = len(os.listdir(testPath))
+        # initialize the total number of training and testing image
+        NUM_TRAIN_IMAGES = len(os.listdir(trainPath))
+        NUM_VAL_IMAGES = len(os.listdir(valPath))
+        NUM_TEST_IMAGES = len(os.listdir(testPath))
 
-# open the training CSV file, then initialize the unique set of class
-# labels in the dataset along with the testing labels
-f = open(trainCsvPath, "r")
-f.readline()
-labels = set()
-trainLabs = {}
-valLabs = {}
-for line in f:
-    # extract the class label, update the labels list, and increment
-    # the total number of training images
-    line_content = line.strip().split(",")
-    label = line_content[2]
-    trainLabs[line_content[0]] = line_content[2]
-    labels.add(label)
-f.close()
-f = open(valCsvPath, "r")
-f.readline()
-for line in f:
-    # extract the class label, update the test labels list, and
-    # increment the total number of testing images
-    line_content = line.strip().split(",")
-    label = line_content[1]
-    valLabs[line_content[0]] = line_content[1]
-f.close()
+        # open the training CSV file, then initialize the unique set of class
+        # labels in the dataset along with the testing labels
+        f = open(trainCsvPath, "r")
+        f.readline()
+        labels = set()
+        trainLabs = {}
+        valLabs = {}
+        for line in f:
+            # extract the class label, update the labels list, and increment
+            # the total number of training images
+            line_content = line.strip().split(",")
+            label = line_content[2]
+            trainLabs[line_content[0]] = line_content[2]
+            labels.add(label)
+        f.close()
+        f = open(valCsvPath, "r")
+        f.readline()
+        for line in f:
+            # extract the class label, update the test labels list, and
+            # increment the total number of testing images
+            line_content = line.strip().split(",")
+            label = line_content[1]
+            valLabs[line_content[0]] = line_content[1]
+        f.close()
 
-# create the label binarizer for one-hot encoding labels, then encode the testing labels
-lb = LabelBinarizer()
-lb.fit(list(labels))
+        # create the label binarizer for one-hot encoding labels, then encode the testing labels
+        lb = LabelBinarizer()
+        lb.fit(list(labels))
 
-# construct the training image generator for data augmentation
-aug = ImageDataGenerator(
-    rotation_range=20,
-    zoom_range=0.15,
-    width_shift_range=0.2,
-    height_shift_range=0.2,
-    shear_range=0.15,
-    horizontal_flip=True,
-    fill_mode="nearest")
+        # construct the training image generator for data augmentation
+        aug = ImageDataGenerator(
+            rotation_range=20,
+            zoom_range=0.15,
+            width_shift_range=0.2,
+            height_shift_range=0.2,
+            shear_range=0.15,
+            horizontal_flip=True,
+            fill_mode="nearest")
 
-# initialize both the training and testing image generators
-trainGen = csv_image_generator(trainLabs, trainPath, BATCH_SIZE, lb, mode="train", aug=aug)
-valGen = csv_image_generator(valLabs, valPath, BATCH_SIZE, lb, mode="train", aug=None)
-testGen = csv_image_generator(valLabs, testPath, BATCH_SIZE, lb, mode="train", aug=None)
+        # initialize both the training and testing image generators
+        trainGen = csv_image_generator(trainLabs, trainPath, BATCH_SIZE, lb, mode="train", aug=aug)
+        valGen = csv_image_generator(valLabs, valPath, BATCH_SIZE, lb, mode="train", aug=None)
+        testGen = csv_image_generator(valLabs, testPath, BATCH_SIZE, lb, mode="train", aug=None)
 
-# initialize our Keras model and compile it
-vgg_conv = VGG16(include_top=False, weights='imagenet', input_shape=(512, 512, 3))
+        # initialize our Keras model and compile it
+        vgg_conv = VGG16(include_top=False, weights='imagenet', input_shape=(512, 512, 3))
 
-# for layer in vgg_conv.layers[:-4]:
-for layer in vgg_conv.layers:
-    layer.trainable = False
+        # for layer in vgg_conv.layers[:-4]:
+        for layer in vgg_conv.layers:
+            layer.trainable = False
 
-model = Sequential()
-model.add(vgg_conv)
-model.add(GlobalAveragePooling2D())
-model.add(Dense(1, activation='sigmoid'))
-model.summary()
+        model = Sequential()
+        model.add(vgg_conv)
+        model.add(GlobalAveragePooling2D())
+        model.add(Dense(1, activation='sigmoid'))
+        model.summary()
 
-model.compile(loss='binary_crossentropy', optimizer=SGD(lr=1e-4), metrics=['accuracy'])
+        mySgd = SGD(lr=1e-3, decay=5e-5, momentum=0.9, nesterov=True)
+        model.compile(loss='binary_crossentropy', optimizer=mySgd, metrics=['accuracy'])
 
-history = model.fit_generator(trainGen, steps_per_epoch=NUM_TRAIN_IMAGES // BATCH_SIZE, validation_data=valGen,
-                              validation_steps=NUM_VAL_IMAGES // BATCH_SIZE, epochs=NUM_EPOCHS, verbose=1)
+        history = model.fit_generator(trainGen, epochs=NUM_EPOCHS, verbose=1,
+                                      steps_per_epoch=(NUM_TRAIN_IMAGES // BATCH_SIZE),
+                                      validation_data=valGen,
+                                      validation_steps=(NUM_VAL_IMAGES // BATCH_SIZE))
 
-score = model.evaluate_generator(testGen, NUM_TEST_IMAGES // BATCH_SIZE)
-
-# Save the model
-model.save('vgg16fine.h5')
+        score = model.evaluate_generator(testGen, NUM_TEST_IMAGES // BATCH_SIZE)
+        f = open("training_log.txt", "w+")
+        f.write("history - accuracy:\n")
+        f.write(str(history.history['accuracy']))
+        f.write("\n\nscores:\n")
+        for loss, acc in score:
+            f.write("loss: " + str(loss) + "\tacc: " + str(acc) + "\n")
+        f.close()
+        # Save the model
+        model.save('vgg16fine.h5')
+    except Exception:
+        f = open("error_log.txt", "w+")
+        f.write(traceback.format_exc())
+        f.write(str(sys.exc_info()[2]))
+        f.close()
+        print(traceback.format_exc())
+        print(sys.exc_info()[2])

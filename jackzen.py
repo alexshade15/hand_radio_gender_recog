@@ -13,7 +13,7 @@ from matplotlib import pyplot as plt
 from sklearn.model_selection import GridSearchCV
 
 
-def data_gen(img_folder, mask_folder, batch_size):
+def data_gen(img_folder, mask_folder, batch_size, aug=None):
     c = 0
     n1 = os.listdir(img_folder)  # List of training images
     random.shuffle(n1)  # n2 = os.listdir(mask_folder)  # List of training images
@@ -35,6 +35,8 @@ def data_gen(img_folder, mask_folder, batch_size):
         if c + batch_size >= len(os.listdir(img_folder)):
             c = 0
             random.shuffle(n1)
+        if aug is not None:
+            (img, mask) = next(aug.flow(img, mask, batch_size=batch_size))
         yield img, mask
 
 
@@ -131,63 +133,74 @@ def myGrid():
     #  [0.4104248046875, 0.7677431], [3.5604740619659423, 0.76915395], [0.5666816473007202, 0.77221453],
     #  [3.537072849273682, 0.77067107]]
 
-    learn_rate = [0.001, 0.01, 0.1, 0.2, 0.3]
-    momentum = [0.0, 0.2, 0.4, 0.6, 0.8, 0.9]
+    #learn_rate = [0.001, 0.01, 0.1, 0.2, 0.3]
+    learn_rate = [0.01]
+    momentum = [0.2] # [0.0, 0.2, 0.4, 0.6, 0.8, 0.9]
     histories = []
     scores = []
     models = []
 
     train_datagen = ImageDataGenerator(
-        rescale=1. / 255,
-        rotation_range=30,
-        zoom_range=0.15,
-        width_shift_range=0.2,
-        height_shift_range=0.2,
-        shear_range=0.15,
+        #rescale=1. / 255,
+        rotation_range=10,
+        zoom_range=0.1,
+        width_shift_range=0.1,
+        height_shift_range=0.1,
+        shear_range=0.1,
         horizontal_flip=True,
         fill_mode="nearest")
     val_datagen = ImageDataGenerator()
     test_datagen = ImageDataGenerator()
 
-    train_frame_path = '/data/segmentation2/train_frames/'
-    train_mask_path = '/data/segmentation2/train_masks/'
-    val_frame_path = '/data/segmentation2/val_frames/'
-    val_mask_path = '/data/segmentation2/val_masks/'
-    test_frame_path = '/data/segmentation2/test_frames/'
-    test_mask_path = '/data/segmentation2/test_masks/'
+    train_frame_path = '/data/segmentation2/train_frames/train/'
+    train_mask_path = '/data/segmentation2/train_masks/train/'
+    val_frame_path = '/data/segmentation2/val_frames/val/'
+    val_mask_path = '/data/segmentation2/val_masks/val/'
+    test_frame_path = '/data/segmentation2/test_frames/test/'
+    test_mask_path = '/data/segmentation2/test_masks/test/'
 
     BATCH_SIZE = 4
+    max_score = 0
 
-    train_image_generator = train_datagen.flow_from_directory(train_frame_path, batch_size=BATCH_SIZE)
-    train_mask_generator = train_datagen.flow_from_directory(train_mask_path, batch_size=BATCH_SIZE)
-    val_image_generator = val_datagen.flow_from_directory(val_frame_path, batch_size=BATCH_SIZE)
-    val_mask_generator = val_datagen.flow_from_directory(val_mask_path, batch_size=BATCH_SIZE)
-    test_image_generator = test_datagen.flow_from_directory(test_frame_path, batch_size=BATCH_SIZE)
-    test_mask_generator = test_datagen.flow_from_directory(test_mask_path, batch_size=BATCH_SIZE)
+    #train_image_gen = train_datagen.flow_from_directory(train_frame_path, batch_size=BATCH_SIZE)
+    #train_mask_gen = train_datagen.flow_from_directory(train_mask_path, batch_size=BATCH_SIZE)
+    #val_image_gen = val_datagen.flow_from_directory(val_frame_path, batch_size=BATCH_SIZE)
+    #val_mask_gen = val_datagen.flow_from_directory(val_mask_path, batch_size=BATCH_SIZE)
+    #test_image_gen = test_datagen.flow_from_directory(test_frame_path, batch_size=BATCH_SIZE)
+    #test_mask_gen = test_datagen.flow_from_directory(test_mask_path, batch_size=BATCH_SIZE)
 
     for lr in learn_rate:
         for mom in momentum:
             m = unet()
             m.compile(optimizer=SGD(learning_rate=lr, momentum=mom), loss='binary_crossentropy', metrics=['accuracy'])
 
-            # train_gen = data_gen(train_frame_path, train_mask_path, batch_size=BATCH_SIZE)
-            # val_gen = data_gen(val_frame_path, val_mask_path, batch_size=BATCH_SIZE)
-            # test_gen = data_gen(test_frame_path, test_mask_path, batch_size=BATCH_SIZE)
+            train_gen = data_gen(train_frame_path, train_mask_path, batch_size=BATCH_SIZE)
+            val_gen = data_gen(val_frame_path, val_mask_path, batch_size=BATCH_SIZE)
+            test_gen = data_gen(test_frame_path, test_mask_path, batch_size=BATCH_SIZE)
             NO_OF_TRAINING_IMAGES = len(os.listdir(train_frame_path))
             NO_OF_VAL_IMAGES = len(os.listdir(val_frame_path))
             NO_OF_TEST_IMAGES = len(os.listdir(test_frame_path))
-            NO_OF_EPOCHS = 25
+            print("NO_OF_TRAINING_IMAGES: ", NO_OF_TRAINING_IMAGES)
+            print("NO_OF_VAL_IMAGES: ", NO_OF_VAL_IMAGES)
+            print("NO_OF_TEST_IMAGES: ", NO_OF_TEST_IMAGES, "\n\n")
+            NO_OF_EPOCHS = 50
 
-            history = m.fit_generator((train_image_generator, train_mask_generator), epochs=NO_OF_EPOCHS,
+            history = m.fit_generator(train_gen, epochs=NO_OF_EPOCHS,
                                       steps_per_epoch=(NO_OF_TRAINING_IMAGES // BATCH_SIZE),
-                                      validation_data=(val_image_generator, val_mask_generator), validation_steps=(NO_OF_VAL_IMAGES // BATCH_SIZE))
-            score = m.evaluate_generator((test_image_generator, test_mask_generator), NO_OF_TEST_IMAGES // BATCH_SIZE)
+                                      validation_data=val_gen, validation_steps=(NO_OF_VAL_IMAGES // BATCH_SIZE))
+            score = m.evaluate_generator(test_gen, NO_OF_TEST_IMAGES // BATCH_SIZE)
             histories.append(history)
             scores.append(score)
             models.append(m)
-    max_score = 0
+            print(score)
+            print("learningRate: ", lr, "\nmomentum: ", mom)
+            print("\nNO_OF_TRAINING_IMAGES: ", NO_OF_TRAINING_IMAGES)
+            print("NO_OF_VAL_IMAGES: ", NO_OF_VAL_IMAGES)
+            print("NO_OF_TEST_IMAGES: ", NO_OF_TEST_IMAGES, "\n\n")
     for index, s in enumerate(scores):
+        print(str(s) + "\n ---- \n\n")
         if s[1] > max_score:
+            max_score = s[1]
             max_index = index
     models[max_index].save("ultiSeg" + str(max_score) + ".h5")
     # return (histories, scores)
@@ -220,9 +233,9 @@ if __name__ == "__main__":
     val_mask_generator = val_datagen.flow_from_directory(val_mask_path, batch_size=BATCH_SIZE)
     test_image_generator = val_datagen.flow_from_directory(test_frame_path, batch_size=BATCH_SIZE)
     test_mask_generator = val_datagen.flow_from_directory(test_mask_path, batch_size=BATCH_SIZE)
+
     # train_generator = zip(train_image_generator, train_mask_generator)
     # val_generator = zip(val_image_generator, val_mask_generator)
-
     # train_gen = data_gen(train_frame_path, train_mask_path, batch_size=BATCH_SIZE)
     # val_gen = data_gen(val_frame_path, val_mask_path, batch_size=BATCH_SIZE)
     # test_gen = data_gen(test_frame_path, test_mask_path, batch_size=BATCH_SIZE)

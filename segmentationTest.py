@@ -51,9 +51,9 @@ def predict(n, index, threshold):
     return ptt
 
 
-def generateMasks(folder):
+def generateMasks(folder, w_name):
     m = model.unet()
-    m.load_weights('/data/ultiSeg.h5')
+    m.load_weights( w_name)
 
     images_folder = '/data/normalized/' + folder
     images = os.listdir(images_folder)
@@ -93,15 +93,23 @@ def maskApply(imgPath, maskPath, dataset_type):
     img_list = os.listdir(imgPath)
     mask_list = os.listdir(maskPath)
     for img in img_list:
-        number, _ = img.split(".")
-        mask_name = "masks" + number + ".png"
+        print("\n\n", img)
+        #number, _ = img.split(".")
+        mask_name = img #"masks" + number + ".png"
         if mask_name in mask_list:
             image = cv2.imread(imgPath + img)
             mask = cv2.imread(maskPath + mask_name, cv2.IMREAD_GRAYSCALE)
             res = cv2.bitwise_and(image, image, mask=mask)
+            print("masked")
+            b,g,r = cv2.split(res)
             clahe = cv2.createCLAHE(clipLimit=3, tileGridSize=(64, 64))
-            image = clahe.apply(res)
+            r = clahe.apply(r)
+            g = clahe.apply(g)
+            b = clahe.apply(b)
+            print("clahed")
+            image = cv2.merge((r, g, b))
             cv2.imwrite('/data/handset/' + dataset_type + '/' + img, image)
+            print("saved")
         else:
             print("Errore, " + img + " non presente nelle maschere.", file=sys.stderr)
 

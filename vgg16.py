@@ -25,6 +25,8 @@ def csv_image_generator(dictLabs, imgPath, batch_size, lb, mode="train", aug=Non
     random.shuffle(n1)  # n2 = os.listdir(mask_folder)  # List of training images
     while True:
         labels = []
+        try: del img
+        except: img = None
         img = np.zeros((batch_size, 512, 512, 3)).astype('float')
         for i in range(c, c + batch_size):
             train_img = cv2.imread(imgPath + '/' + n1[i])
@@ -33,6 +35,7 @@ def csv_image_generator(dictLabs, imgPath, batch_size, lb, mode="train", aug=Non
             number, ext = n1[i].split(".")
             img[i - c] = train_img  # add to array - img[0], img[1], and so on.
             labels.append(dictLabs[number])
+            #print(n1[i] + "  --  " + dictLabs[number])
         c += batch_size
         if c + batch_size >= len(os.listdir(imgPath)):
             c = 0
@@ -88,7 +91,7 @@ def csv_image_generator(dictLabs, imgPath, batch_size, lb, mode="train", aug=Non
     #         yield (np.array(images), labels)
 
 
-def main(epoch=10, bs=64):
+def main(epoch=10, bs=64, unlock=False):
     try:
         # initialize the paths to our training and testing CSV files
         trainCsvPath = "/data/train.csv"
@@ -154,9 +157,12 @@ def main(epoch=10, bs=64):
         # initialize our Keras model and compile it
         vgg_conv = VGG16(include_top=False, weights='imagenet', input_shape=(512, 512, 3))
 
-        # for layer in vgg_conv.layers[:-4]:
-        for layer in vgg_conv.layers:
-            layer.trainable = False
+        if unlock:
+            for layer in vgg_conv.layers[:-4]:
+                layer.trainable = False
+        else:
+            for layer in vgg_conv.layers:
+                layer.trainable = False
 
         model = Sequential()
         model.add(vgg_conv)
@@ -177,11 +183,10 @@ def main(epoch=10, bs=64):
         f.write("history - accuracy:\n")
         f.write(str(history.history['accuracy']))
         f.write("\n\nscores:\n")
-        for loss, acc in score:
-            f.write("loss: " + str(loss) + "\tacc: " + str(acc) + "\n")
+        f.write(str(score) + "\n")
         f.close()
         # Save the model
-        model.save('vgg16fine.h5')
+        model.save('fine_vgg16_ep-' + epoch + '_bs-' + bs + '_unlock-' + unlock + '.h5')
     except Exception:
         f = open("error_log.txt", "w+")
         f.write(traceback.format_exc())

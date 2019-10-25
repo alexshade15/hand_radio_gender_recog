@@ -10,13 +10,13 @@ def make_square(im, min_size=256, fill_color=(0, 0, 0, 0)):
     return new_im
 
 
-photos = glob.glob("./bone_age/training/*.png")
+photos = glob.glob("/data/validation/boneage-validation-dataset-2/*.png")
 for photo in photos:
+    name = photo.split("/")[-1]
+    print(name)
     img = Image.open(photo)
     img = make_square(img)
-    # img.show()
     width = 512
     height = 512
     img = img.resize((width, height), Image.ANTIALIAS)  # best down-sizing filter
-    # img.show()
-    img.save(photo.replace("bone_age", "normalized"), "PNG")
+    img.save("/data/normalized/validation2/" + name, "PNG")

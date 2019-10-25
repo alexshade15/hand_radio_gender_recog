@@ -133,9 +133,9 @@ def myGrid():
     #  [0.4104248046875, 0.7677431], [3.5604740619659423, 0.76915395], [0.5666816473007202, 0.77221453],
     #  [3.537072849273682, 0.77067107]]
 
-    #learn_rate = [0.001, 0.01, 0.1, 0.2, 0.3]
-    learn_rate = [0.01]
-    momentum = [0.2] # [0.0, 0.2, 0.4, 0.6, 0.8, 0.9]
+    learn_rate = [0.001, 0.01, 0.1, 0.2, 0.3]
+    #learn_rate = [0.01]
+    momentum = [0.0, 0.2, 0.4, 0.6, 0.8, 0.9]
     histories = []
     scores = []
     models = []
@@ -168,42 +168,54 @@ def myGrid():
     #val_mask_gen = val_datagen.flow_from_directory(val_mask_path, batch_size=BATCH_SIZE)
     #test_image_gen = test_datagen.flow_from_directory(test_frame_path, batch_size=BATCH_SIZE)
     #test_mask_gen = test_datagen.flow_from_directory(test_mask_path, batch_size=BATCH_SIZE)
+    try:
+        for lr in learn_rate:
+            for mom in momentum:
+                m = unet()
+                m.compile(optimizer=SGD(learning_rate=lr, momentum=mom), loss='binary_crossentropy', metrics=['accuracy'])
 
-    for lr in learn_rate:
-        for mom in momentum:
-            m = unet()
-            m.compile(optimizer=SGD(learning_rate=lr, momentum=mom), loss='binary_crossentropy', metrics=['accuracy'])
+                train_gen = data_gen(train_frame_path, train_mask_path, batch_size=BATCH_SIZE)
+                val_gen = data_gen(val_frame_path, val_mask_path, batch_size=BATCH_SIZE)
+                test_gen = data_gen(test_frame_path, test_mask_path, batch_size=BATCH_SIZE)
+                NO_OF_TRAINING_IMAGES = len(os.listdir(train_frame_path))
+                NO_OF_VAL_IMAGES = len(os.listdir(val_frame_path))
+                NO_OF_TEST_IMAGES = len(os.listdir(test_frame_path))
+                print("NO_OF_TRAINING_IMAGES: ", NO_OF_TRAINING_IMAGES)
+                print("NO_OF_VAL_IMAGES: ", NO_OF_VAL_IMAGES)
+                print("NO_OF_TEST_IMAGES: ", NO_OF_TEST_IMAGES, "\n\n")
+                NO_OF_EPOCHS = 50
 
-            train_gen = data_gen(train_frame_path, train_mask_path, batch_size=BATCH_SIZE)
-            val_gen = data_gen(val_frame_path, val_mask_path, batch_size=BATCH_SIZE)
-            test_gen = data_gen(test_frame_path, test_mask_path, batch_size=BATCH_SIZE)
-            NO_OF_TRAINING_IMAGES = len(os.listdir(train_frame_path))
-            NO_OF_VAL_IMAGES = len(os.listdir(val_frame_path))
-            NO_OF_TEST_IMAGES = len(os.listdir(test_frame_path))
-            print("NO_OF_TRAINING_IMAGES: ", NO_OF_TRAINING_IMAGES)
-            print("NO_OF_VAL_IMAGES: ", NO_OF_VAL_IMAGES)
-            print("NO_OF_TEST_IMAGES: ", NO_OF_TEST_IMAGES, "\n\n")
-            NO_OF_EPOCHS = 50
+                history = m.fit_generator(train_gen, epochs=NO_OF_EPOCHS,
+                                          steps_per_epoch=(NO_OF_TRAINING_IMAGES // BATCH_SIZE),
+                                          validation_data=val_gen, validation_steps=(NO_OF_VAL_IMAGES // BATCH_SIZE))
+                score = m.evaluate_generator(test_gen, NO_OF_TEST_IMAGES // BATCH_SIZE)
+                histories.append(history)
+                scores.append(score)
+                print(score)
+                print("learningRate: ", lr, "\nmomentum: ", mom)
+                print("\nNO_OF_TRAINING_IMAGES: ", NO_OF_TRAINING_IMAGES)
+                print("NO_OF_VAL_IMAGES: ", NO_OF_VAL_IMAGES)
+                print("NO_OF_TEST_IMAGES: ", NO_OF_TEST_IMAGES, "\n\n")
+                model.save("/models/segmentation" + str(score[1]) + "_" + str(score[0]) + ".h5")
+                f = open("/models/segmentation" + str(score[1]) + "_" + str(score[0]) + ".txt")
+                f.write("HH-ACC\n")
+                f.write(str(history.history['accuracy']) + "\n")
+                f.write(str(history.history['val_accuracy']) + "\n")
+                f.write("HH-LOSS\n")
+                f.write(history.history['loss'] + "\n")
+                f.write(history.history['val_loss'] + "\n")
+                f.write("Score\n")
+                for s in score:
+                    f.write(str(s[1]) + str(s[0]) + "\n")
+                f.close()
+    except Exception:
+        f = open("error_log.txt", "w+")
+        f.write(traceback.format_exc())
+        f.write(str(sys.exc_info()[2]))
+        f.close()
+        print(traceback.format_exc())
+        print(sys.exc_info()[2])
 
-            history = m.fit_generator(train_gen, epochs=NO_OF_EPOCHS,
-                                      steps_per_epoch=(NO_OF_TRAINING_IMAGES // BATCH_SIZE),
-                                      validation_data=val_gen, validation_steps=(NO_OF_VAL_IMAGES // BATCH_SIZE))
-            score = m.evaluate_generator(test_gen, NO_OF_TEST_IMAGES // BATCH_SIZE)
-            histories.append(history)
-            scores.append(score)
-            models.append(m)
-            print(score)
-            print("learningRate: ", lr, "\nmomentum: ", mom)
-            print("\nNO_OF_TRAINING_IMAGES: ", NO_OF_TRAINING_IMAGES)
-            print("NO_OF_VAL_IMAGES: ", NO_OF_VAL_IMAGES)
-            print("NO_OF_TEST_IMAGES: ", NO_OF_TEST_IMAGES, "\n\n")
-    for index, s in enumerate(scores):
-        print(str(s) + "\n ---- \n\n")
-        if s[1] > max_score:
-            max_score = s[1]
-            max_index = index
-    models[max_index].save("ultiSeg" + str(max_score) + ".h5")
-    # return (histories, scores)
 
 
 if __name__ == "__main__":

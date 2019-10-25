@@ -17,6 +17,7 @@ import random
 import cv2
 import traceback
 import sys
+from datetime import datetime
 
 
 def csv_image_generator(dictLabs, imgPath, batch_size, lb, mode="train", aug=None):
@@ -25,8 +26,10 @@ def csv_image_generator(dictLabs, imgPath, batch_size, lb, mode="train", aug=Non
     random.shuffle(n1)  # n2 = os.listdir(mask_folder)  # List of training images
     while True:
         labels = []
-        try: del img
-        except: img = None
+        try:
+            del img
+        except:
+            img = None
         img = np.zeros((batch_size, 512, 512, 3)).astype('float')
         for i in range(c, c + batch_size):
             train_img = cv2.imread(imgPath + '/' + n1[i])
@@ -35,7 +38,7 @@ def csv_image_generator(dictLabs, imgPath, batch_size, lb, mode="train", aug=Non
             number, ext = n1[i].split(".")
             img[i - c] = train_img  # add to array - img[0], img[1], and so on.
             labels.append(dictLabs[number])
-            #print(n1[i] + "  --  " + dictLabs[number])
+            # print(n1[i] + "  --  " + dictLabs[number])
         c += batch_size
         if c + batch_size >= len(os.listdir(imgPath)):
             c = 0
@@ -91,7 +94,7 @@ def csv_image_generator(dictLabs, imgPath, batch_size, lb, mode="train", aug=Non
     #         yield (np.array(images), labels)
 
 
-def main(epoch=10, bs=64, unlock=False):
+def main(epoch=10, bs=64, unlock=False, weights=None):
     try:
         # initialize the paths to our training and testing CSV files
         trainCsvPath = "/data/train.csv"
@@ -170,6 +173,9 @@ def main(epoch=10, bs=64, unlock=False):
         model.add(Dense(1, activation='sigmoid'))
         model.summary()
 
+        if weights is not None:
+            model.load_weights(weights)
+
         mySgd = SGD(lr=1e-3, decay=5e-5, momentum=0.9, nesterov=True)
         model.compile(loss='binary_crossentropy', optimizer=mySgd, metrics=['accuracy'])
 
@@ -179,18 +185,36 @@ def main(epoch=10, bs=64, unlock=False):
                                       validation_steps=(NUM_VAL_IMAGES // BATCH_SIZE))
 
         score = model.evaluate_generator(testGen, NUM_TEST_IMAGES // BATCH_SIZE)
-        f = open("training_log.txt", "w+")
+
+        dateTimeObj = datetime.now()
+
+        f = open("training_log" + str(dateTimeObj) + ".txt", "w+")
         f.write("history - accuracy:\n")
         f.write(str(history.history['accuracy']))
         f.write("\n\nscores:\n")
         f.write(str(score) + "\n")
         f.close()
         # Save the model
-        model.save('fine_vgg16_ep-' + epoch + '_bs-' + bs + '_unlock-' + unlock + '.h5')
+        weights_name = 'fine_vgg16_ep-' + epoch + '_bs-' + bs + '_unlock-' + unlock + str(dateTimeObj) + '.h5'
+        model.save(weights_name)
+        
+        return weights_name
     except Exception:
-        f = open("error_log.txt", "w+")
+        f = open("error_log" + str(dateTimeObj) + ".txt", "w+")
         f.write(traceback.format_exc())
         f.write(str(sys.exc_info()[2]))
         f.close()
         print(traceback.format_exc())
         print(sys.exc_info()[2])
+
+
+def multiple_train(epoch=10, bs=64, unlock=False, weights=None):
+    epoch_done = 0
+    step = 3
+    while epoch_done < epoch:
+        if (epoch - epoch_done) >= step:
+            weights = main(step, bs, unlock, weights)
+        else:
+            weights = main(epoch - epoch_done, bs, unlock, weights)
+        epoch_done += step
+        print("Epoch " + epoch_done + "/" + epoch)

@@ -107,9 +107,7 @@ def csv_image_generator(dictLabs, imgPath, batch_size, lb, mode="train", aug=Non
     #
     #         # if the data augmentation object is not None, apply it
     #         if aug is not None:
-    #             (images, labels) = next(aug.flow(np.array(images), labels, batch_size=batch_size))
-    #         yield (np.array(images), labels)
-
+    #             (images, labels) = next(aug.fl
 
 def main(epoch=10, bs=64, unlock=False, weights=None):
     try:
@@ -171,7 +169,7 @@ def main(epoch=10, bs=64, unlock=False, weights=None):
             fill_mode="nearest")
 
         # initialize both the training and testing image generators
-        trainGen = csv_image_generator(trainLabs, trainPath, BATCH_SIZE, lb, mode="train", aug=aug)
+        trainGen = csv_image_generator(trainLabs, trainPath, BATCH_SIZE, lb, mode="train", aug=None)
         valGen = csv_image_generator(valLabs, valPath, BATCH_SIZE, lb, mode="train", aug=None)
         testGen = csv_image_generator(valLabs, testPath, BATCH_SIZE, lb, mode="train", aug=None)
 
@@ -206,36 +204,24 @@ def main(epoch=10, bs=64, unlock=False, weights=None):
 
         dateTimeObj = datetime.now()
 
-        f = open("training_log" + str(dateTimeObj) + ".txt", "w+")
+        f = open("models_vgg/training_log" + str(dateTimeObj) + ".txt", "w+")
         f.write("history - accuracy:\n")
         f.write(str(history.history['accuracy']))
         f.write("\n\nscores:\n")
         f.write(str(score) + "\n")
         f.close()
         # Save the model
-        weights_name = 'fine_vgg16_ep-' + str(epoch) + '_bs-' + str(bs) + '_unlock-' + str(unlock) + "__" + str(dateTimeObj) + '.h5'
+        weights_name = 'models_vgg/fine_vgg16_ep-' + str(epoch) + '_bs-' + str(bs) + '_unlock-' + str(unlock) + "__" + str(dateTimeObj) + '.h5'
         model.save(weights_name)
 
         return weights_name
     except Exception:
-        f = open("error_log" + str(dateTimeObj) + ".txt", "w+")
+        f = open("models_vgg/error_log" + str(dateTimeObj) + ".txt", "w+")
         f.write(traceback.format_exc())
         f.write(str(sys.exc_info()[2]))
         f.close()
         print(traceback.format_exc())
         print(sys.exc_info()[2])
-
-
-def multiple_train(epoch=10, bs=64, step=3, unlock=False, weights=None):
-    epoch_done = 0
-    while epoch_done < epoch:
-        if (epoch - epoch_done) >= step:
-            weights = main(step, bs, unlock, weights)
-            epoch_done += step
-        else:
-            weights = main(epoch - epoch_done, bs, unlock, weights)
-            epoch_done += epoch - epoch_done
-        print("Epoch " + str(epoch_done) + "/" + str(epoch))
 
 
 def test_generator(use_aug=True, bs=4):

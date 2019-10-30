@@ -11,7 +11,35 @@ import random
 import numpy as np
 from matplotlib import pyplot as plt
 from sklearn.model_selection import GridSearchCV
+import traceback
+import sys
+from datetime import datetime
+from datetime import date
 
+
+class Unbuffered(object):
+    def __init__(self, filename):
+        self.stdout = sys.stdout
+        self.log = open(filename, "a")
+        self.log.write("\n\n\n--------   " + datetime.now().strftime("%d/%m/%Y-%H:%M:%S").strip())
+
+    def write(self, data):
+        self.stdout.write(data)
+        self.stdout.flush()
+        self.log.write(data)
+
+    def __enter__(self):
+        sys.stdout = self
+
+    def __exit__(self, exc_type, exc_value, tb):
+        sys.stdout = self.stdout
+        if exc_type is not None:
+            self.log.write(traceback.format_exc())
+        self.log.close()
+
+    def flush(self):
+        self.log.flush()
+        self.stdout.flush()
 
 def data_gen(img_folder, mask_folder, batch_size, aug=None):
     c = 0
@@ -127,15 +155,17 @@ def gridSearch(batch_size=4):
         print("%f (%f) with: %r" % (mean, stdev, param))
 
 
-def myGrid():
+def myGrid(epoch = 50, bs=4):
     # optimizer = ['SGD', 'RMSprop', 'Adagrad', 'Adadelta', 'Adam', 'Adamax', 'Nadam']
     # [[0.22073517739772797, 0.9589321], [3.4372099876403808, 0.7771452], [3.537072992324829, 0.77067107],
     #  [0.4104248046875, 0.7677431], [3.5604740619659423, 0.76915395], [0.5666816473007202, 0.77221453],
     #  [3.537072849273682, 0.77067107]]
 
-    learn_rate = [0.001, 0.01, 0.1, 0.2, 0.3]
+    sys.stdout=Unbuffered("console_log" + str(date.today().strftime("%d:%m")).strip() + ".txt")
+
+    learn_rate = [0.001] #, 0.01, 0.1, 0.2, 0.3]
     #learn_rate = [0.01]
-    momentum = [0.0, 0.2, 0.4, 0.6, 0.8, 0.9]
+    momentum = [0.8, 0.9] #[0.0, 0.2, 0.4, 0.6, 0.8, 0.9]
     histories = []
     scores = []
     models = []
@@ -159,7 +189,8 @@ def myGrid():
     test_frame_path = '/data/segmentation2/test_frames/test/'
     test_mask_path = '/data/segmentation2/test_masks/test/'
 
-    BATCH_SIZE = 4
+    NO_OF_EPOCHS = epoch
+    BATCH_SIZE = bs
     max_score = 0
 
     #train_image_gen = train_datagen.flow_from_directory(train_frame_path, batch_size=BATCH_SIZE)
@@ -180,10 +211,9 @@ def myGrid():
                 NO_OF_TRAINING_IMAGES = len(os.listdir(train_frame_path))
                 NO_OF_VAL_IMAGES = len(os.listdir(val_frame_path))
                 NO_OF_TEST_IMAGES = len(os.listdir(test_frame_path))
-                print("NO_OF_TRAINING_IMAGES: ", NO_OF_TRAINING_IMAGES)
-                print("NO_OF_VAL_IMAGES: ", NO_OF_VAL_IMAGES)
-                print("NO_OF_TEST_IMAGES: ", NO_OF_TEST_IMAGES, "\n\n")
-                NO_OF_EPOCHS = 50
+                #print("NO_OF_TRAINING_IMAGES: ", NO_OF_TRAINING_IMAGES)
+                #print("NO_OF_VAL_IMAGES: ", NO_OF_VAL_IMAGES)
+                #print("NO_OF_TEST_IMAGES: ", NO_OF_TEST_IMAGES, "\n\n")
 
                 history = m.fit_generator(train_gen, epochs=NO_OF_EPOCHS,
                                           steps_per_epoch=(NO_OF_TRAINING_IMAGES // BATCH_SIZE),
@@ -191,23 +221,30 @@ def myGrid():
                 score = m.evaluate_generator(test_gen, NO_OF_TEST_IMAGES // BATCH_SIZE)
                 histories.append(history)
                 scores.append(score)
-                print(score)
+                print("\n\nScore: " + str(score))
+                print("train acc " + str(history.history['accuracy']))
+                print("valid acc " + str(history.history['val_accuracy']))
                 print("learningRate: ", lr, "\nmomentum: ", mom)
-                print("\nNO_OF_TRAINING_IMAGES: ", NO_OF_TRAINING_IMAGES)
-                print("NO_OF_VAL_IMAGES: ", NO_OF_VAL_IMAGES)
-                print("NO_OF_TEST_IMAGES: ", NO_OF_TEST_IMAGES, "\n\n")
-                model.save("/models/segmentation" + str(score[1]) + "_" + str(score[0]) + ".h5")
-                f = open("/models/segmentation" + str(score[1]) + "_" + str(score[0]) + ".txt")
-                f.write("HH-ACC\n")
-                f.write(str(history.history['accuracy']) + "\n")
-                f.write(str(history.history['val_accuracy']) + "\n")
-                f.write("HH-LOSS\n")
-                f.write(history.history['loss'] + "\n")
-                f.write(history.history['val_loss'] + "\n")
-                f.write("Score\n")
-                for s in score:
-                    f.write(str(s[1]) + str(s[0]) + "\n")
-                f.close()
+                #print("\nNO_OF_TRAINING_IMAGES: ", NO_OF_TRAINING_IMAGES)
+                #print("NO_OF_VAL_IMAGES: ", NO_OF_VAL_IMAGES)
+                #print("NO_OF_TEST_IMAGES: ", NO_OF_TEST_IMAGES, "\n\n")
+                m.save("./models/seg" + "_lr_" + str(lr) + "_mom_" + str(mom) + "__"  + str(score[1]) + "_" + str(score[0]) + ".h5", "w+")
+                try:
+                    f = open("./models/seg" + "_lr_" + str(lr) + "_mom_" + str(mom) + "__" + str(score[1]) + "_" + str(score[0]) + ".txt", "w+")
+                    f.write("HH-ACC\n")
+                    f.write("train acc " + str(history.history['accuracy']) + "\n")
+                    f.write("valid acc " + str(history.history['val_accuracy']) + "\n")
+                    f.write("HH-LOSS\n")
+                    f.write("train loss " + str(history.history['loss']) + "\n")
+                    f.write("valid loss " + str(history.history['val_loss']) + "\n")
+                    f.write("Score\n")
+                    f.write("Loss test " + str(score[0]) + "\n")
+                    f.write("Acc test " + str(score[1]) + "\n")
+                    f.close()
+                except Exception:
+                    print("Exception on: ", "_lr: " + str(lr) + "_mom: " + str(mom))
+                    print(traceback.format_exc())
+                    print(sys.exc_info()[2])
     except Exception:
         f = open("error_log.txt", "w+")
         f.write(traceback.format_exc())

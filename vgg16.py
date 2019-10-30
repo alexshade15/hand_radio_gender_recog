@@ -4,12 +4,6 @@ from tensorflow.compat.v2.keras.optimizers import *
 from tensorflow.compat.v2.keras.applications.vgg16 import VGG16
 from tensorflow.compat.v2.keras.preprocessing.image import ImageDataGenerator
 
-# from keras.models import Sequential
-# from keras.layers import *
-# from keras.optimizers import *
-# from keras.applications.vgg16 import VGG16
-# from keras.preprocessing.image import ImageDataGenerator
-
 from sklearn.preprocessing import LabelBinarizer
 import numpy as np
 import os
@@ -18,6 +12,33 @@ import cv2
 import traceback
 import sys
 from datetime import datetime
+import traceback
+from datetime import date
+
+
+class Unbuffered(object):
+    def __init__(self, filename):
+        self.stdout = sys.stdout
+        self.log = open(filename, "a")
+        self.log.write("\n\n\n--------   " + datetime.now().strftime("%d/%m/%Y-%H:%M:%S").strip())
+
+    def write(self, data):
+        self.stdout.write(data)
+        self.stdout.flush()
+        self.log.write(data)
+
+    def __enter__(self):
+        sys.stdout = self
+
+    def __exit__(self, exc_type, exc_value, tb):
+        sys.stdout = self.stdout
+        if exc_type is not None:
+            self.log.write(traceback.format_exc())
+        self.log.close()
+
+    def flush(self):
+        self.log.flush()
+        self.stdout.flush()
 
 
 def csv_image_generator(dictLabs, imgPath, batch_size, lb, mode="train", aug=None):
@@ -26,10 +47,6 @@ def csv_image_generator(dictLabs, imgPath, batch_size, lb, mode="train", aug=Non
     random.shuffle(n1)  # n2 = os.listdir(mask_folder)  # List of training images
     while True:
         labels = []
-        try:
-            del img
-        except:
-            img = None
         img = np.zeros((batch_size, 512, 512, 3)).astype('float')
         for i in range(c, c + batch_size):
             train_img = cv2.imread(imgPath + '/' + n1[i])
@@ -96,6 +113,7 @@ def csv_image_generator(dictLabs, imgPath, batch_size, lb, mode="train", aug=Non
 
 def main(epoch=10, bs=64, unlock=False, weights=None):
     try:
+        sys.stdout=Unbuffered("console_log_vgg16" + str(date.today().strftime("%d:%m")).strip() + ".txt")
         # initialize the paths to our training and testing CSV files
         trainCsvPath = "/data/train.csv"
         valCsvPath = "/data/val.csv"
@@ -195,9 +213,9 @@ def main(epoch=10, bs=64, unlock=False, weights=None):
         f.write(str(score) + "\n")
         f.close()
         # Save the model
-        weights_name = 'fine_vgg16_ep-' + epoch + '_bs-' + bs + '_unlock-' + unlock + str(dateTimeObj) + '.h5'
+        weights_name = 'fine_vgg16_ep-' + str(epoch) + '_bs-' + str(bs) + '_unlock-' + str(unlock) + "__" + str(dateTimeObj) + '.h5'
         model.save(weights_name)
-        
+
         return weights_name
     except Exception:
         f = open("error_log" + str(dateTimeObj) + ".txt", "w+")
@@ -208,13 +226,57 @@ def main(epoch=10, bs=64, unlock=False, weights=None):
         print(sys.exc_info()[2])
 
 
-def multiple_train(epoch=10, bs=64, unlock=False, weights=None):
+def multiple_train(epoch=10, bs=64, step=3, unlock=False, weights=None):
     epoch_done = 0
-    step = 3
     while epoch_done < epoch:
         if (epoch - epoch_done) >= step:
             weights = main(step, bs, unlock, weights)
+            epoch_done += step
         else:
             weights = main(epoch - epoch_done, bs, unlock, weights)
-        epoch_done += step
-        print("Epoch " + epoch_done + "/" + epoch)
+            epoch_done += epoch - epoch_done
+        print("Epoch " + str(epoch_done) + "/" + str(epoch))
+
+
+def test_generator(use_aug=True, bs=4):
+    trainCsvPath = "/data/train.csv"
+    valCsvPath = "/data/val.csv"
+    trainPath = '/data/handset/train/'
+    BATCH_SIZE = bs
+
+    f = open(trainCsvPath, "r")
+    f.readline()
+    labels = set()
+    trainLabs = {}
+    valLabs = {}
+
+    for line in f:
+        line_content = line.strip().split(",")
+        label = line_content[2]
+        trainLabs[line_content[0]] = line_content[2]
+        labels.add(label)
+    f.close()
+
+    f = open(valCsvPath, "r")
+    f.readline()
+    for line in f:
+        line_content = line.strip().split(",")
+        label = line_content[1]
+        valLabs[line_content[0]] = line_content[1]
+    f.close()
+
+    lb = LabelBinarizer()
+    lb.fit(list(labels))
+
+    aug = None
+    if use_aug:
+        aug = ImageDataGenerator(
+            rotation_range=20,
+            zoom_range=0.15,
+            width_shift_range=0.2,
+            height_shift_range=0.2,
+            shear_range=0.15,
+            horizontal_flip=True,
+            fill_mode="nearest")
+
+    return csv_image_generator(trainLabs, trainPath, BATCH_SIZE, lb, mode="train", aug=aug)

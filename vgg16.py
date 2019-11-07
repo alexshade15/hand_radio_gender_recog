@@ -111,13 +111,13 @@ def csv_image_generator(dictLabs, imgPath, batch_size, lb, mode="train", aug=Non
 
 def main(epoch=10, bs=64, unlock=False, weights=None):
     try:
-        sys.stdout=Unbuffered("console_log_vgg16" + str(date.today().strftime("%d:%m")).strip() + ".txt")
+        #sys.stdout=Unbuffered("console_log_vgg16" + str(date.today().strftime("%d:%m")).strip() + ".txt")
         # initialize the paths to our training and testing CSV files
         trainCsvPath = "/data/train.csv"
         valCsvPath = "/data/val.csv"
-        trainPath = '/data/handset/train/'
-        valPath = '/data/handset/val/'
-        testPath = '/data/handset/test/'
+        trainPath = '/data/handset/training/'
+        valPath = '/data/handset/validation1/'
+        testPath = '/data/handset/validation2/'
 
         # initialize the number of epochs to train for and batch size
         NUM_EPOCHS = epoch
@@ -185,15 +185,23 @@ def main(epoch=10, bs=64, unlock=False, weights=None):
 
         model = Sequential()
         model.add(vgg_conv)
-        model.add(GlobalAveragePooling2D())
+
+        model.add(Flatten())
+        model.add(Dense(512, activation='relu'))
+        model.add(Dropout(0.5))
+        #model.add(GlobalAveragePooling2D())
         model.add(Dense(1, activation='sigmoid'))
         model.summary()
 
         if weights is not None:
             model.load_weights(weights)
-
-        mySgd = SGD(lr=1e-3, decay=5e-5, momentum=0.9, nesterov=True)
-        model.compile(loss='binary_crossentropy', optimizer=mySgd, metrics=['accuracy'])
+        my_lr = 1e-3
+        my_decay = 0
+        my_momentum = 0
+        my_nesterov = False
+        opt = "SGD"
+        my_opt = SGD(lr=my_lr, momentum=my_momentum, nesterov=my_nesterov)
+        model.compile(loss='binary_crossentropy', optimizer=my_opt, metrics=['accuracy'])
 
         history = model.fit_generator(trainGen, epochs=NUM_EPOCHS, verbose=1,
                                       steps_per_epoch=(NUM_TRAIN_IMAGES // BATCH_SIZE),
@@ -204,19 +212,25 @@ def main(epoch=10, bs=64, unlock=False, weights=None):
 
         dateTimeObj = datetime.now()
 
-        f = open("models_vgg/training_log" + str(dateTimeObj) + ".txt", "w+")
+        if unlock is None:
+            isUnlocked = False
+        else:
+            isUnlocked = True
+
+        name_model = "_opt:" + str(opt) + "_ep:" + str(epoch) + "_bs:" + str(bs) + "_lr:" + str(my_lr) + "_mom:" + str(my_momentum) + "_unlock:" + str(isUnlocked) + "_acc:" + str(score[1]) + "_loss:" + str(score[0])
+        f = open("models_vgg/training_log" + name_model + "_date:" + str(dateTimeObj) + ".txt", "w+")
         f.write("history - accuracy:\n")
         f.write(str(history.history['accuracy']))
         f.write("\n\nscores:\n")
         f.write(str(score) + "\n")
         f.close()
         # Save the model
-        weights_name = 'models_vgg/fine_vgg16_ep-' + str(epoch) + '_bs-' + str(bs) + '_unlock-' + str(unlock) + "__" + str(dateTimeObj) + '.h5'
+        weights_name = 'models_vgg/fine_vgg16' + name_model + "_date:" + str(dateTimeObj) + '.h5'
         model.save(weights_name)
 
         return weights_name
     except Exception:
-        f = open("models_vgg/error_log" + str(dateTimeObj) + ".txt", "w+")
+        f = open("models_vgg/error_log" + name_model + "_date:" + str(dateTimeObj) + ".txt", "w+")
         f.write(traceback.format_exc())
         f.write(str(sys.exc_info()[2]))
         f.close()
@@ -266,3 +280,25 @@ def test_generator(use_aug=True, bs=4):
             fill_mode="nearest")
 
     return csv_image_generator(trainLabs, trainPath, BATCH_SIZE, lb, mode="train", aug=aug)
+
+if __name__ == "__main__":
+    try:
+        epoch = int(sys.argv[1])
+    except:
+        epoch = 50
+    try:
+        batch_size = int(sys.argv[2])
+    except:
+        batch_size = 64
+    try:
+        unlock = sys.argv[3]
+    except:
+        unlock = None
+    try:
+        weights = sys.argv[4]
+    except:
+        weights = None
+    print("epoch: %d, batch_size: %d, unlock: %s, weights: %s \n\n" % (epoch, batch_size, unlock, weights))
+
+    main(epoch, batch_size, unlock, weights)
+    print("Training succesfully")

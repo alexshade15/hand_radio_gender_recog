@@ -85,9 +85,27 @@ def generateMasks(folder, w_name):
                     cv2.drawContours(my_mask, [c], -1, 0, -1)
             my_mask = cv2.bitwise_not(my_mask)
             out_mask = cv2.bitwise_and(my_mask, my_mask, mask=mask)
+            out_mask = imFill(out_mask)
             cv2.imwrite('/data/masked_normalized/' + folder + '/' + image, out_mask)
             print('save to: 	/data/masked_normalized/' + folder + '/' + image)
 
+def imFill(img):
+    # Copy the thresholded image.
+    im_floodfill = img.copy()
+
+    # Mask used to flood filling.
+    # Notice the size needs to be 2 pixels than the image.
+    h, w = img.shape[:2]
+    mask = np.zeros((h + 2, w + 2), np.uint8)
+
+    # Floodfill from point (0, 0)
+    cv2.floodFill(im_floodfill, mask, (0, 0), 255)
+
+    # Invert floodfilled image
+    im_floodfill_inv = cv2.bitwise_not(im_floodfill)
+
+    # Combine the two images to get the foreground.
+    return (img | im_floodfill_inv)
 
 def maskApply(imgPath, maskPath, dataset_type):
     import sys

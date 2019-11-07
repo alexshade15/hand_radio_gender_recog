@@ -109,7 +109,7 @@ def csv_image_generator(dictLabs, imgPath, batch_size, lb, mode="train", aug=Non
     #         if aug is not None:
     #             (images, labels) = next(aug.fl
 
-def main(epoch=10, bs=64, unlock=False, weights=None):
+def main(epoch=10, bs=64, unlock=False, weights=None, optimizer, lr, mom, nesterov, decay):
     try:
         #sys.stdout=Unbuffered("console_log_vgg16" + str(date.today().strftime("%d:%m")).strip() + ".txt")
         # initialize the paths to our training and testing CSV files
@@ -122,7 +122,6 @@ def main(epoch=10, bs=64, unlock=False, weights=None):
         # initialize the number of epochs to train for and batch size
         NUM_EPOCHS = epoch
         BATCH_SIZE = bs
-        image_size = 512
 
         # initialize the total number of training and testing image
         NUM_TRAIN_IMAGES = len(os.listdir(trainPath))
@@ -195,12 +194,12 @@ def main(epoch=10, bs=64, unlock=False, weights=None):
 
         if weights is not None:
             model.load_weights(weights)
-        my_lr = 1e-3
-        my_decay = 0
-        my_momentum = 0
-        my_nesterov = False
-        opt = "SGD"
-        my_opt = SGD(lr=my_lr, momentum=my_momentum, nesterov=my_nesterov)
+        my_lr = lr
+        my_decay = decay
+        my_momentum = mom
+        my_nesterov = nesterov
+        opt = optimizer[1]
+        my_opt = optimizer[0]
         model.compile(loss='binary_crossentropy', optimizer=my_opt, metrics=['accuracy'])
 
         history = model.fit_generator(trainGen, epochs=NUM_EPOCHS, verbose=1,
@@ -217,17 +216,25 @@ def main(epoch=10, bs=64, unlock=False, weights=None):
         else:
             isUnlocked = True
 
-        name_model = "_opt:" + str(opt) + "_ep:" + str(epoch) + "_bs:" + str(bs) + "_lr:" + str(my_lr) + "_mom:" + str(my_momentum) + "_unlock:" + str(isUnlocked) + "_acc:" + str(score[1]) + "_loss:" + str(score[0])
-        f = open("models_vgg/training_log" + name_model + "_date:" + str(dateTimeObj) + ".txt", "w+")
-        f.write("history - accuracy:\n")
-        f.write(str(history.history['accuracy']))
-        f.write("\n\nscores:\n")
-        f.write(str(score) + "\n")
-        f.close()
-        # Save the model
+        name_model = "_opt:" + str(opt) + "_ep:" + str(epoch) + "_bs:" + str(bs) + "_lr:" + str(my_lr) + "_mom:" + str(my_momentum) + "_nest:" + str(my_nesterov) + "_dec:" + str(my_decay) + "_unlock:" + str(isUnlocked) + "_acc:" + str(score[1]) + "_loss:" + str(score[0])
         weights_name = 'models_vgg/fine_vgg16' + name_model + "_date:" + str(dateTimeObj) + '.h5'
         model.save(weights_name)
-
+        try:
+            f = open("models_vgg/training_log" + name_model + "_date:" + str(dateTimeObj) + ".txt", "w+")
+            f.write("HH-ACC\n")
+            f.write("train acc " + str(history.history['accuracy']) + "\n")
+            f.write("valid acc " + str(history.history['val_accuracy']) + "\n")
+            f.write("HH-LOSS\n")
+            f.write("train loss " + str(history.history['loss']) + "\n")
+            f.write("valid loss " + str(history.history['val_loss']) + "\n")
+            f.write("Score\n")
+            f.write("Loss test " + str(score[0]) + "\n")
+            f.write("Acc test " + str(score[1]) + "\n")
+            f.close()
+        except Exception:
+            print("Exception on: fine_vgg16" + name_model + "_date:" + str(dateTimeObj))
+            print(traceback.format_exc())
+            print(sys.exc_info()[2])
         return weights_name
     except Exception:
         f = open("models_vgg/error_log" + name_model + "_date:" + str(dateTimeObj) + ".txt", "w+")
@@ -300,5 +307,29 @@ if __name__ == "__main__":
         weights = None
     print("epoch: %d, batch_size: %d, unlock: %s, weights: %s \n\n" % (epoch, batch_size, unlock, weights))
 
-    main(epoch, batch_size, unlock, weights)
+    optimizers = []
+    lrs = [0.0001, 0.0001, 0.00001, 0.0001, 0.001, 0.0001, 0.001, 0.01, 0.001, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
+    moms = [.9, .9, None, None, None, None, None, .9, .9, .9, .0, .2, .4, .6, .8, .9]
+    nesterovs = [False, True, None, None, None, None, None, False, False, False, False, False, False, False, False, False]
+    decays = [None, None, None, None, None, None, None, 1e-6, 1e-6, None, None, None, None, None, None, None]
+    optimizers.append((SGD(lr=lrs[0], momentum=0.9), "SGD"))
+    optimizers.append((SGD(lr=lrs[1], momentum=0.9, nesterov=True), "SGD"))
+    optimizers.append((Adam(lr=lrs[2]), "Adam"))
+    optimizers.append((Adam(lr=lrs[3]), "Adam"))
+    optimizers.append((Adam(lr=lrs[4]), "Adam"))
+    optimizers.append((RMSprop(lr=lrs[5]), "RMSprop"))
+    optimizers.append((RMSprop(lr=lrs[6]), "RMSprop"))
+
+    optimizers.append((SGD(lr=lrs[7], momentum=0.9, nesterov=True, decay=1e-6), "SGD"))
+    optimizers.append((SGD(lr=lrs[8], momentum=0.9, nesterov=True, decay=1e-6), "SGD"))
+    optimizers.append((SGD(lr=lrs[9], momentum=0.9), "SGD"))
+    optimizers.append((SGD(lr=lrs[10], momentum=0.0), "SGD"))
+    optimizers.append((SGD(lr=lrs[11], momentum=0.2), "SGD"))
+    optimizers.append((SGD(lr=lrs[12], momentum=0.4), "SGD"))
+    optimizers.append((SGD(lr=lrs[13], momentum=0.6), "SGD"))
+    optimizers.append((SGD(lr=lrs[14], momentum=0.8), "SGD"))
+    optimizers.append((SGD(lr=lrs[15], momentum=0.9), "SGD"))
+
+    for i in range(len(lrs)):
+        main(epoch, batch_size, unlock, weights, optimizers[i], lrs[i], moms[i], nesterovs[i], decays[i])
     print("Training succesfully")

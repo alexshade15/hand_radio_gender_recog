@@ -350,7 +350,7 @@ if __name__ == "__main__":
               None, None, None, None, None, None,
               1e-6, 1e-6, 1e-6,
               1e-6, 1e-6, 1e-6]
-    #optimizers.append((SGD(lr=lrs[0], momentum=0.9), "SGD"))
+    optimizers.append((SGD(lr=lrs[0], momentum=0.9), "SGD"))
     optimizers.append((SGD(lr=lrs[1], momentum=0.9, nesterov=True), "SGD"))
     optimizers.append((Adam(lr=lrs[2]), "Adam"))
     optimizers.append((Adam(lr=lrs[3]), "Adam"))

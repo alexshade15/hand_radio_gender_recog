@@ -1,14 +1,8 @@
-from keras.preprocessing.image import ImageDataGenerator
-from keras.callbacks import ModelCheckpoint
-from keras.callbacks import CSVLogger
-from keras.callbacks import EarlyStopping
-from keras.optimizers import Adam
-
 import model
 import os
 import cv2
-import random
 import numpy as np
+import sys
 from matplotlib import pyplot as plt
 
 
@@ -19,7 +13,7 @@ def plot_sample(X, y, preds, binary_preds, ix=0):
     ax[0].imshow(X[ix, ..., 0], cmap='seismic')
     if has_mask:
         ax[0].contour(y[ix].squeeze(), colors='k', levels=[0.5])
-    ax[0].set_title('Seismic')
+    ax[0].set_title('Test')
 
     ax[1].imshow(y[ix].squeeze())
     ax[1].set_title('Mask')
@@ -35,25 +29,13 @@ def plot_sample(X, y, preds, binary_preds, ix=0):
     ax[3].set_title('Binary Prediction')
 
 
-def predict(n, index, threshold):
-    tfi = cv2.imread(test_folder_frame + '/' + n[index], cv2.IMREAD_GRAYSCALE) / 255.
-    tfi = cv2.resize(tfi, (512, 512))
-    tfi = tfi.reshape(1, 512, 512, 1)
-
-    # train_masks_img = cv2.imread(test_folder_masks + '/' + "masks" + number + "." + ext, cv2.IMREAD_GRAYSCALE) / 255.
-    # train_masks_img = cv2.resize(train_masks_img, (512, 512))
-    # train_masks_img = train_masks_img.reshape(1, 512, 512, 1)
-
-    pt = m.predict(tfi, verbose=1)
-    ptt = (pt > threshold).astype(np.uint8)
-    # plot_sample(train_frame_img, train_masks_img, preds_train, preds_train_t)
-    plot_sample(tfi, tfi, pt, ptt)
-    return ptt
-
-
 def generateMasks(folder, w_name):
+    ''' folder: folder that contains radiograpy
+        w_name: .h5 file
+        generates in masked_normalized folder a mask for each radiograpy in folder'''
+
     m = model.unet()
-    m.load_weights( w_name)
+    m.load_weights(w_name)
 
     images_folder = '/data/normalized/' + folder
     images = os.listdir(images_folder)
@@ -73,10 +55,10 @@ def generateMasks(folder, w_name):
             img_pred = m.predict(img_input, verbose=1)
             img_mask = (img_pred > 0.3).astype(np.uint8)
 
+            # from the prediction, takes only the biggest shapes. It is supposed to be the hand.
             mask = img_mask.squeeze() * 255
             contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
             c = max(contours, key=cv2.contourArea)
-            # myMask2 = cv2.merge(mv=[mask, mask, mask])
             my_mask = cv2.merge(mv=[mask, mask, mask])
             clen = cv2.arcLength(c, True)
             for contour in contours:
@@ -85,44 +67,38 @@ def generateMasks(folder, w_name):
                     cv2.drawContours(my_mask, [c], -1, 0, -1)
             my_mask = cv2.bitwise_not(my_mask)
             out_mask = cv2.bitwise_and(my_mask, my_mask, mask=mask)
-            out_mask = imFill(out_mask)
+            out_mask = imFill(out_mask)  # fills holes in the hands if they occurs
             cv2.imwrite('/data/masked_normalized/' + folder + '/' + image, out_mask)
             print('save to: 	/data/masked_normalized/' + folder + '/' + image)
 
-def imFill(img):
-    # Copy the thresholded image.
-    im_floodfill = img.copy()
 
-    # Mask used to flood filling.
-    # Notice the size needs to be 2 pixels than the image.
+def imFill(img):
+    ''' Fills the mask's holes'''
+
+    im_floodfill = img.copy()
     h, w = img.shape[:2]
     mask = np.zeros((h + 2, w + 2), np.uint8)
-
-    # Floodfill from point (0, 0)
     cv2.floodFill(im_floodfill, mask, (0, 0), 255)
-
-    # Invert floodfilled image
     im_floodfill_inv = cv2.bitwise_not(im_floodfill)
+    return img | im_floodfill_inv
 
-    # Combine the two images to get the foreground.
-    return (img | im_floodfill_inv)
 
 def maskApply(imgPath, maskPath, dataset_type):
-    import sys
+    ''' Apply the masks from maskPath to the radiograpys from imgPath, obtaining the masked radiographys'''
+
     imgPath = imgPath + dataset_type + "/"
     maskPath = maskPath + dataset_type + "/"
     img_list = os.listdir(imgPath)
     mask_list = os.listdir(maskPath)
     for img in img_list:
         print("\n\nImage name: ", img)
-        #number, _ = img.split(".")
-        mask_name = img #"masks" + number + ".png"
+        mask_name = img
         if mask_name in mask_list:
             image = cv2.imread(imgPath + img)
             mask = cv2.imread(maskPath + mask_name, cv2.IMREAD_GRAYSCALE)
             res = cv2.bitwise_and(image, image, mask=mask)
             print("masked")
-            b,g,r = cv2.split(res)
+            b, g, r = cv2.split(res)
             clahe = cv2.createCLAHE(clipLimit=3, tileGridSize=(64, 64))
             r = clahe.apply(r)
             g = clahe.apply(g)
@@ -134,16 +110,17 @@ def maskApply(imgPath, maskPath, dataset_type):
         else:
             print("Errore, " + img + " non presente nelle maschere.", file=sys.stderr)
 
+
 def test():
     m = model.unet()
-    m.load_weights('MoreData_SGD015_batch16_newIMG.h5')
+    m.load_weights('ultiSeg92.h5')
 
     test_folder_frame = './data/normalized/training'
-    test_folder_masks = './data/normalized/training'
+    # test_folder_masks = './data/normalized/training'
 
     n1 = os.listdir(test_folder_frame)
     i = 1000
-    name, ext = n1[i].split(".")
+    # name, ext = n1[i].split(".")
 
     train_frame_img = cv2.imread(test_folder_frame + '/' + n1[i], cv2.IMREAD_GRAYSCALE) / 255.
     train_frame_img = cv2.resize(train_frame_img, (512, 512))

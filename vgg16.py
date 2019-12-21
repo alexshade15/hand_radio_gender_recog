@@ -3,6 +3,8 @@ from tensorflow.compat.v2.keras.layers import *
 from tensorflow.compat.v2.keras.optimizers import *
 from tensorflow.compat.v2.keras.applications.vgg16 import VGG16
 from tensorflow.compat.v2.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.compat.v2.keras import backend as K
+from tensorflow.compat.v2.keras.callbacks import EarlyStopping
 
 from sklearn.preprocessing import LabelBinarizer
 import numpy as np
@@ -109,7 +111,7 @@ def csv_image_generator(dictLabs, imgPath, batch_size, lb, mode="train", aug=Non
     #         if aug is not None:
     #             (images, labels) = next(aug.fl
 
-def main(epoch=10, bs=64, unlock=False, weights=None, optimizer, lr, mom, nesterov, decay):
+def main(epoch=10, bs=64, unlock=False, weights=None, optimizer=(SGD(), "SGD"), lr=0.001, mom=0.9, nesterov=False, decay=0.0):
     try:
         #sys.stdout=Unbuffered("console_log_vgg16" + str(date.today().strftime("%d:%m")).strip() + ".txt")
         # initialize the paths to our training and testing CSV files
@@ -168,7 +170,7 @@ def main(epoch=10, bs=64, unlock=False, weights=None, optimizer, lr, mom, nester
             fill_mode="nearest")
 
         # initialize both the training and testing image generators
-        trainGen = csv_image_generator(trainLabs, trainPath, BATCH_SIZE, lb, mode="train", aug=None)
+        trainGen = csv_image_generator(trainLabs, trainPath, BATCH_SIZE, lb, mode="train", aug=aug)
         valGen = csv_image_generator(valLabs, valPath, BATCH_SIZE, lb, mode="train", aug=None)
         testGen = csv_image_generator(valLabs, testPath, BATCH_SIZE, lb, mode="train", aug=None)
 
@@ -202,7 +204,9 @@ def main(epoch=10, bs=64, unlock=False, weights=None, optimizer, lr, mom, nester
         my_opt = optimizer[0]
         model.compile(loss='binary_crossentropy', optimizer=my_opt, metrics=['accuracy'])
 
-        history = model.fit_generator(trainGen, epochs=NUM_EPOCHS, verbose=1,
+        es = EarlyStopping(monitor='val_loss', verbose=1, patience=20)
+
+        history = model.fit_generator(trainGen, epochs=NUM_EPOCHS, verbose=1, callbacks=[es],
                                       steps_per_epoch=(NUM_TRAIN_IMAGES // BATCH_SIZE),
                                       validation_data=valGen,
                                       validation_steps=(NUM_VAL_IMAGES // BATCH_SIZE))
@@ -221,12 +225,10 @@ def main(epoch=10, bs=64, unlock=False, weights=None, optimizer, lr, mom, nester
         model.save(weights_name)
         try:
             f = open("models_vgg/training_log" + name_model + "_date:" + str(dateTimeObj) + ".txt", "w+")
-            f.write("HH-ACC\n")
-            f.write("train acc " + str(history.history['accuracy']) + "\n")
-            f.write("valid acc " + str(history.history['val_accuracy']) + "\n")
-            f.write("HH-LOSS\n")
-            f.write("train loss " + str(history.history['loss']) + "\n")
-            f.write("valid loss " + str(history.history['val_loss']) + "\n")
+            f.write("train_acc = " + str(history.history['accuracy']) + "\n")
+            f.write("valid_acc = " + str(history.history['val_accuracy']) + "\n")
+            f.write("train_loss = " + str(history.history['loss']) + "\n")
+            f.write("valid_loss = " + str(history.history['val_loss']) + "\n")
             f.write("Score\n")
             f.write("Loss test " + str(score[0]) + "\n")
             f.write("Acc test " + str(score[1]) + "\n")
@@ -308,10 +310,38 @@ if __name__ == "__main__":
     print("epoch: %d, batch_size: %d, unlock: %s, weights: %s \n\n" % (epoch, batch_size, unlock, weights))
 
     optimizers = []
-    lrs = [0.0001, 0.0001, 0.00001, 0.0001, 0.001, 0.0001, 0.001, 0.01, 0.001, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
-    moms = [.9, .9, None, None, None, None, None, .9, .9, .9, .0, .2, .4, .6, .8, .9]
-    nesterovs = [False, True, None, None, None, None, None, False, False, False, False, False, False, False, False, False]
-    decays = [None, None, None, None, None, None, None, 1e-6, 1e-6, None, None, None, None, None, None, None]
+    lrs = [0.0001, 0.0001,
+           0.00001, 0.0001, 0.001,
+           0.0001, 0.001,
+           0.01, 0.001, 0.01,
+           0.01, 0.01, 0.01, 0.01, 0.01, 0.01,
+           0.001, 0.001, 0.001, 0.001, 0.001, 0.001,
+           0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001,
+           0.00001, 0.00001, 0.00001, 0.00001, 0.00001, 0.00001]
+    moms = [.9, .9,
+            None, None, None,
+            None, None,
+            .9, .9, .9,
+            .0, .2, .4, .6, .8, .9,
+            .0, .2, .4, .6, .8, .9,
+            .0, .2, .4, .6, .8, .9,
+            .0, .2, .4, .6, .8, .9]
+    nesterovs = [False, True,
+                 None, None, None,
+                 None, None,
+                 True, True, False,
+                 False, False, False, False, False, False,
+                 False, False, False, False, False, False,
+                 False, False, False, False, False, False,
+                 False, False, False, False, False, False]
+    decays = [None, None,
+              None, None, None,
+              None, None,
+              1e-6, 1e-6, None,
+              None, None, None, None, None, None,
+              None, None, None, None, None, None,
+              None, None, None, None, None, None,
+              None, None, None, None, None, None]
     optimizers.append((SGD(lr=lrs[0], momentum=0.9), "SGD"))
     optimizers.append((SGD(lr=lrs[1], momentum=0.9, nesterov=True), "SGD"))
     optimizers.append((Adam(lr=lrs[2]), "Adam"))
@@ -330,6 +360,28 @@ if __name__ == "__main__":
     optimizers.append((SGD(lr=lrs[14], momentum=0.8), "SGD"))
     optimizers.append((SGD(lr=lrs[15], momentum=0.9), "SGD"))
 
-    for i in range(len(lrs)):
+    optimizers.append((SGD(lr=lrs[16], momentum=0.0), "SGD"))
+    optimizers.append((SGD(lr=lrs[17], momentum=0.2), "SGD"))
+    optimizers.append((SGD(lr=lrs[18], momentum=0.4), "SGD"))
+    optimizers.append((SGD(lr=lrs[19], momentum=0.6), "SGD"))
+    optimizers.append((SGD(lr=lrs[20], momentum=0.8), "SGD"))
+    optimizers.append((SGD(lr=lrs[21], momentum=0.9), "SGD"))
+
+    optimizers.append((SGD(lr=lrs[22], momentum=0.0), "SGD"))
+    optimizers.append((SGD(lr=lrs[23], momentum=0.2), "SGD"))
+    optimizers.append((SGD(lr=lrs[24], momentum=0.4), "SGD"))
+    optimizers.append((SGD(lr=lrs[25], momentum=0.6), "SGD"))
+    optimizers.append((SGD(lr=lrs[26], momentum=0.8), "SGD"))
+    optimizers.append((SGD(lr=lrs[27], momentum=0.9), "SGD"))
+
+    optimizers.append((SGD(lr=lrs[28], momentum=0.0), "SGD"))
+    optimizers.append((SGD(lr=lrs[29], momentum=0.2), "SGD"))
+    optimizers.append((SGD(lr=lrs[30], momentum=0.4), "SGD"))
+    optimizers.append((SGD(lr=lrs[31], momentum=0.6), "SGD"))
+    optimizers.append((SGD(lr=lrs[32], momentum=0.8), "SGD"))
+    optimizers.append((SGD(lr=lrs[33], momentum=0.9), "SGD"))
+
+    for i in range(2, 3): #len(lrs)):
         main(epoch, batch_size, unlock, weights, optimizers[i], lrs[i], moms[i], nesterovs[i], decays[i])
+        K.clear_session()
     print("Training succesfully")

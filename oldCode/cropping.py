@@ -1,6 +1,6 @@
 from PIL import Image
 import glob
-
+import os
 
 def make_square(im, min_size=256, fill_color=(0, 0, 0, 0)):
     x, y = im.size
@@ -10,13 +10,17 @@ def make_square(im, min_size=256, fill_color=(0, 0, 0, 0)):
     return new_im
 
 
-photos = glob.glob("/data/validation/boneage-validation-dataset-2/*.png")
-for photo in photos:
-    name = photo.split("/")[-1]
-    print(name)
-    img = Image.open(photo)
-    img = make_square(img)
-    width = 512
-    height = 512
-    img = img.resize((width, height), Image.ANTIALIAS)  # best down-sizing filter
-    img.save("/data/normalized/validation2/" + name, "PNG")
+def main(ori_folder, dest_folder):
+    photos = glob.glob(ori_folder + "*.jpg")
+    dest = os.listdir(dest_folder)
+    for photo in photos:
+        name = photo.split("/")[-1].split(".")[0]
+        name = name + ".png"
+        if (name) not in dest:
+            print(name)
+            img = Image.open(photo)
+            img = make_square(img)
+            width = 512
+            height = 512
+            img = img.resize((width, height), Image.ANTIALIAS)  # best down-sizing filter
+            img.save(dest_folder + name, "PNG")

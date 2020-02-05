@@ -143,7 +143,7 @@ def main(epoch=10, bs=64, unlock=False, weights=None, optimizer=(SGD(), "SGD"), 
         my_opt = optimizer[0]
         model.compile(loss='binary_crossentropy', optimizer=my_opt, metrics=['accuracy'])
 
-        tbCallBack = TensorBoard(log_dir="log_NEWFOLD_ADAM_tb_1_0_4_3", write_graph=True, write_images=True)
+        tbCallBack = TensorBoard(log_dir="log_NEWFOLD_ADAM_tb_1_0", write_graph=True, write_images=True)
         # es = EarlyStopping(monitor='val_loss', verbose=1, patience=20)
 
         history = model.fit_generator(trainGen, epochs=epoch, verbose=1, callbacks=[tbCallBack],
@@ -289,7 +289,7 @@ if __name__ == "__main__":
     optimizers.append((SGD(lr=lrs[38], momentum=moms[38], nesterov=nesterovs[38], decay=decays[38]), "SGD"))
     optimizers.append((SGD(lr=lrs[39], momentum=moms[39], nesterov=nesterovs[39], decay=decays[39]), "SGD"))
 
-    for i in [1, 0, 4,  3]:
+    for i in [1, 0]:
         print("epochs: {}, bs: {}, unlock: {}, pesi: {}, opt: {}, lr: {}, mom: {}, nest: {}, dec: {}".format(epoch,batch_size, unlock, weights, optimizers[i], lrs[i], moms[i], nesterovs[i], decays[i]))
         main(epoch, batch_size, unlock, weights, optimizers[i], lrs[i], moms[i], nesterovs[i], decays[i])
         K.clear_session()

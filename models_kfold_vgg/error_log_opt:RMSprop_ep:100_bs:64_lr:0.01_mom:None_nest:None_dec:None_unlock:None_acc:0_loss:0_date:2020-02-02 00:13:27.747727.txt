@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "2r_kfold1.py", line 170, in main
+    f.write("training_set = " + train_index + "\n")
+TypeError: must be str, not list
+<traceback object at 0x7f10aec66608>

@@ -1,7 +1,6 @@
-from keras.models import *
-from keras.layers import *
-from keras.optimizers import *
-
+from tensorflow.keras.models import *
+from tensorflow.keras.layers import *
+from tensorflow.keras.optimizers import *
 
 def unet(pretrained_weights=None, input_size=(512, 512, 1)):
     inputs = Input(input_size)

@@ -49,12 +49,12 @@ def csv_image_gen(dictLabs, listImages, imgPath, batch_size, lb, mode="train", a
 def load_model(unlock, weights, mode=0):
     vgg_conv = VGG16(include_top=False, weights='imagenet', input_shape=(512, 512, 3))
 
-    if unlock:
-        for layer in vgg_conv.layers[:-4]:
-            layer.trainable = False
-    else:
-        for layer in vgg_conv.layers:
-            layer.trainable = False
+    #if unlock:
+    #    for layer in vgg_conv.layers[:-4]:
+    #        layer.trainable = False
+    #else:
+    for layer in vgg_conv.layers:
+        layer.trainable = False
     vgg_conv.summary()
 
     model = Sequential()
@@ -75,6 +75,10 @@ def load_model(unlock, weights, mode=0):
 
     if weights is not None:
         model.load_weights(weights)
+
+    if unlock:
+        for layer in model.layers[0].layers[-4:]:
+            layer.trainable = True
 
     return model
 
@@ -143,7 +147,7 @@ def main(epoch=10, bs=64, unlock=False, weights=None, optimizer=(SGD(), "SGD"), 
         my_opt = optimizer[0]
         model.compile(loss='binary_crossentropy', optimizer=my_opt, metrics=['accuracy'])
 
-        tbCallBack = TensorBoard(log_dir="log_NEWFOLD_ADAM_tb_1_0_4_3", write_graph=True, write_images=True)
+        tbCallBack = TensorBoard(log_dir="log_NEWFOLD_ADAM_tb_4_3", write_graph=True, write_images=True)
         # es = EarlyStopping(monitor='val_loss', verbose=1, patience=20)
 
         history = model.fit_generator(trainGen, epochs=epoch, verbose=1, callbacks=[tbCallBack],
@@ -193,11 +197,11 @@ if __name__ == "__main__":
     try:
         unlock = sys.argv[3]
     except:
-        unlock = False
+        unlock = True
     try:
         weights = sys.argv[4]
     except:
-        weights = None #"./architecture_w_75.h5"
+        weights = "pesi_new_kfold_76-75.h5"
     print("epoch: %d, batch_size: %d, unlock: %s, weights: %s \n\n" % (epoch, batch_size, unlock, weights))
 
     optimizers = []
@@ -289,7 +293,7 @@ if __name__ == "__main__":
     optimizers.append((SGD(lr=lrs[38], momentum=moms[38], nesterov=nesterovs[38], decay=decays[38]), "SGD"))
     optimizers.append((SGD(lr=lrs[39], momentum=moms[39], nesterov=nesterovs[39], decay=decays[39]), "SGD"))
 
-    for i in [1, 0, 4,  3]:
+    for i in [4,  3]:
         print("epochs: {}, bs: {}, unlock: {}, pesi: {}, opt: {}, lr: {}, mom: {}, nest: {}, dec: {}".format(epoch,batch_size, unlock, weights, optimizers[i], lrs[i], moms[i], nesterovs[i], decays[i]))
         main(epoch, batch_size, unlock, weights, optimizers[i], lrs[i], moms[i], nesterovs[i], decays[i])
         K.clear_session()

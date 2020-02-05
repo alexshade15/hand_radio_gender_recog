@@ -16,7 +16,7 @@ import cv2
 import sys
 from datetime import datetime
 import traceback
-import kfold2 as kfolds
+import kfolds
 
 
 def csv_image_gen(dictLabs, listImages, imgPath, batch_size, lb, mode="train", aug=None):
@@ -42,19 +42,15 @@ def csv_image_gen(dictLabs, listImages, imgPath, batch_size, lb, mode="train", a
         labels = lb.transform(np.array(labels))
         if aug is not None:
             (img, labels) = next(aug.flow(img, labels, batch_size=batch_size))
-        #print(img, "\n\n\n", labels)
+        # print("\n\n\n\nLABELS", labels, "\n\n\n\n")
         yield img, labels
 
 
 def load_model(unlock, weights, mode=0):
     vgg_conv = VGG16(include_top=False, weights='imagenet', input_shape=(512, 512, 3))
 
-    if unlock:
-        for layer in vgg_conv.layers[:-4]:
-            layer.trainable = False
-    else:
-        for layer in vgg_conv.layers:
-            layer.trainable = False
+    for layer in vgg_conv.layers:
+        layer.trainable = False
     vgg_conv.summary()
 
     model = Sequential()
@@ -76,6 +72,17 @@ def load_model(unlock, weights, mode=0):
     if weights is not None:
         model.load_weights(weights)
 
+    for layer in model.layers[0].layers:
+        print(layer.trainable)
+    if unlock:
+        for layer in model.layers[0].layers[-4:]:
+            layer.trainable = True
+    print("\n\n")
+    for layer in model.layers[0].layers:
+        print(layer.trainable)
+
+    model.summary()
+
     return model
 
 
@@ -83,23 +90,29 @@ def main(epoch=10, bs=64, unlock=False, weights=None, optimizer=(SGD(), "SGD"), 
          my_nesterov=False, my_decay=0.0):
     try:
         # initialize the paths to our training and testing CSV files
-        #trainCsvPath = "/data/train.csv"
-        csvPath = "/data/new.csv"
-        trainPath = '/data/r_r_handset/training/'
+        trainCsvPath = "/data/train.csv"
+        valCsvPath = "/data/val.csv"
+        trainPath = '/data/handset/training/'
         # valPath = '/data/handset/validation1/'
         # testPath = '/data/handset/validation2/'
 
         # open the training CSV file, then initialize the unique set of class
         # labels in the dataset along with the testing labels
-        f = open(csvPath, "r")
+        f = open(trainCsvPath, "r")
         f.readline()
         labels = set()
         csvLabs = {}
         for line in f:
             line_content = line.strip().split(",")
-            label = line_content[1]
-            csvLabs[line_content[0]] = line_content[1]
+            label = line_content[2]
+            csvLabs[line_content[0]] = line_content[2]
             labels.add(label)
+        f.close()
+        f = open(valCsvPath, "r")
+        f.readline()
+        for line in f:
+            line_content = line.strip().split(",")
+            csvLabs[line_content[0]] = line_content[1]
         f.close()
 
         # create the label binarizer for one-hot encoding labels, then encode the testing labels
@@ -120,13 +133,12 @@ def main(epoch=10, bs=64, unlock=False, weights=None, optimizer=(SGD(), "SGD"), 
         X = np.array(os.listdir(trainPath))
 
         # for train_index, val_index in kf.split(os.listdir(trainPath)):
-        train_index = kfolds.training_fold0
-        val_index = kfolds.validation_fold0
-        print("################################", len(train_index), len(val_index))
+        train_index = kfolds.train_index_1
+        val_index = kfolds.val_index_1
         NUM_TRAIN_IMAGES = len(train_index)
         NUM_VAL_IMAGES = len(val_index)
 
-        #print("\n\n", NUM_TRAIN_IMAGES, NUM_VAL_IMAGES)
+        print("\n\n", NUM_TRAIN_IMAGES, NUM_VAL_IMAGES)
 
         trainingImages = X[train_index]
         validationImages = X[val_index]
@@ -143,7 +155,7 @@ def main(epoch=10, bs=64, unlock=False, weights=None, optimizer=(SGD(), "SGD"), 
         my_opt = optimizer[0]
         model.compile(loss='binary_crossentropy', optimizer=my_opt, metrics=['accuracy'])
 
-        tbCallBack = TensorBoard(log_dir="log_NEWFOLD_ADAM_tb_1_0_4_3", write_graph=True, write_images=True)
+        tbCallBack = TensorBoard(log_dir="log_fine_oldkf_tb_15_21", write_graph=True, write_images=True)
         # es = EarlyStopping(monitor='val_loss', verbose=1, patience=20)
 
         history = model.fit_generator(trainGen, epochs=epoch, verbose=1, callbacks=[tbCallBack],
@@ -193,11 +205,11 @@ if __name__ == "__main__":
     try:
         unlock = sys.argv[3]
     except:
-        unlock = False
+        unlock = True
     try:
         weights = sys.argv[4]
     except:
-        weights = None #"./architecture_w_75.h5"
+        weights = "./pesi_75_75.hdf5"
     print("epoch: %d, batch_size: %d, unlock: %s, weights: %s \n\n" % (epoch, batch_size, unlock, weights))
 
     optimizers = []
@@ -289,7 +301,7 @@ if __name__ == "__main__":
     optimizers.append((SGD(lr=lrs[38], momentum=moms[38], nesterov=nesterovs[38], decay=decays[38]), "SGD"))
     optimizers.append((SGD(lr=lrs[39], momentum=moms[39], nesterov=nesterovs[39], decay=decays[39]), "SGD"))
 
-    for i in [1, 0, 4,  3]:
+    for i in [21]:
         print("epochs: {}, bs: {}, unlock: {}, pesi: {}, opt: {}, lr: {}, mom: {}, nest: {}, dec: {}".format(epoch,batch_size, unlock, weights, optimizers[i], lrs[i], moms[i], nesterovs[i], decays[i]))
         main(epoch, batch_size, unlock, weights, optimizers[i], lrs[i], moms[i], nesterovs[i], decays[i])
         K.clear_session()

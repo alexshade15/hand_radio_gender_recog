@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "2r_kfold.py", line 161, in main
+    model.save(weights_name)
+  File "/usr/local/lib/python3.6/dist-packages/tensorflow/python/keras/engine/network.py", line 1213, in save
+    saving.save_model(self, filepath, overwrite, include_optimizer, save_format)
+  File "/usr/local/lib/python3.6/dist-packages/tensorflow/python/keras/saving/save.py", line 104, in save_model
+    model, filepath, overwrite, include_optimizer)
+  File "/usr/local/lib/python3.6/dist-packages/tensorflow/python/keras/saving/hdf5_format.py", line 86, in save_model_to_hdf5
+    f = h5py.File(filepath, mode='w')
+  File "/home/vlongoba/singularity/.local/lib/python3.6/site-packages/h5py/_hl/files.py", line 408, in __init__
+    swmr=swmr)
+  File "/home/vlongoba/singularity/.local/lib/python3.6/site-packages/h5py/_hl/files.py", line 179, in make_fid
+    fid = h5f.create(name, h5f.ACC_TRUNC, fapl=fapl, fcpl=fcpl)
+  File "h5py/_objects.pyx", line 54, in h5py._objects.with_phil.wrapper
+  File "h5py/_objects.pyx", line 55, in h5py._objects.with_phil.wrapper
+  File "h5py/h5f.pyx", line 108, in h5py.h5f.create
+OSError: Unable to create file (unable to open file: name = 'models_vgg_kfold/fine_vgg16_opt:SGD_ep:50_bs:64_lr:0.01_mom:0.9_nest:False_dec:None_unlock:None_acc:0_loss:0_date:2020-01-29 13:53:17.597831.h5', errno = 2, error message = 'No such file or directory', flags = 13, o_flags = 242)
+<traceback object at 0x7fd748293c88>

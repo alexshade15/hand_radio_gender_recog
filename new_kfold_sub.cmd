@@ -22,7 +22,7 @@
 #SBATCH --mail-type=ALL
 
 # set an output file
-#SBATCH --output Kfold_new.dat
+#SBATCH --output new_kfold.dat
 
 # send mail to this address
 #SBATCH --mail-user=vlongoba@uni-muenster.de
@@ -30,4 +30,3 @@
 
 # run the application
 srun singularity exec --bind /data/vlongoba:/data /data/sifs/tensorflow2.sif python new_kfold.py
-# srun singularity exec --bind /data/vlongoba:/data /data/sifs/tensorflow2.sif python unet.py

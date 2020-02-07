@@ -3,11 +3,12 @@
   <component name="ChangeListManager">
     <list default="true" id="cfc03418-469e-4849-ae26-d7a087b3034e" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/jackzen.py" beforeDir="false" afterPath="$PROJECT_DIR$/unet.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/kfold_sub.cmd" beforeDir="false" afterPath="$PROJECT_DIR$/kfold_sub.cmd" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/new_kfold.py" beforeDir="false" afterPath="$PROJECT_DIR$/new_kfold.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/new_kfold_sub.cmd" beforeDir="false" afterPath="$PROJECT_DIR$/new_kfold_sub.cmd" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/segmentationTest.cmd" beforeDir="false" afterPath="$PROJECT_DIR$/segmentationTest.cmd" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/submit.cmd" beforeDir="false" afterPath="$PROJECT_DIR$/submit.cmd" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/unet.py" beforeDir="false" afterPath="$PROJECT_DIR$/unet.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/unet_sub.cmd" beforeDir="false" afterPath="$PROJECT_DIR$/unet_sub.cmd" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -238,7 +239,7 @@
       <workItem from="1580995541165" duration="677000" />
       <workItem from="1580996251690" duration="241000" />
       <workItem from="1581025518686" duration="3355000" />
-      <workItem from="1581065639383" duration="278000" />
+      <workItem from="1581065639383" duration="823000" />
     </task>
     <servers />
   </component>

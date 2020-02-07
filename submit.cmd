@@ -22,7 +22,7 @@
 #SBATCH --mail-type=ALL
 
 # set an output file
-#SBATCH --output output_vgg_train.dat
+#SBATCH --output vgg16.dat
 
 # send mail to this address
 #SBATCH --mail-user=vlongoba@uni-muenster.de
@@ -30,4 +30,3 @@
 
 # run the application
 srun singularity exec --bind /data/vlongoba:/data /data/sifs/tensorflow2.sif python vgg16.py
-# srun singularity exec --bind /data/vlongoba:/data /data/sifs/tensorflow2.sif python unet.py

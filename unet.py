@@ -72,7 +72,7 @@ def myGrid(epoch=50, bs=4):
                 no_of_val_images = len(os.listdir(val_frame_path))
                 no_of_test_images = len(os.listdir(test_frame_path))
 
-                tb_call_back = TensorBoard(log_dir="log_jackzen", write_graph=True, write_images=True)
+                tb_call_back = TensorBoard(log_dir="log_unet", write_graph=True, write_images=True)
                 history = m.fit_generator(train_gen, epochs=no_of_epochs, callbacks=[tb_call_back],
                                           steps_per_epoch=(no_of_training_images // batch_size),
                                           validation_data=val_gen, validation_steps=(no_of_val_images // batch_size))

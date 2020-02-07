@@ -16,8 +16,8 @@ def main(epoch=10, batch_size=64, unlock=False, weights=None, optimizer=(SGD(), 
     x = np.array(os.listdir(train_path))
 
     # for train_index, val_index in kf.split(os.listdir(train_path)):
-    train_index = kfold_new_indexes.training_fold0
-    val_index = kfold_new_indexes.validation_fold0
+    train_index = kfold_new_indexes.training_fold2
+    val_index = kfold_new_indexes.validation_fold2
 
     training_images = x[train_index]
     validation_images = x[val_index]
@@ -31,7 +31,7 @@ if __name__ == "__main__":
     try:
         epoch = int(sys.argv[1])
     except IndexError:
-        epoch = 50
+        epoch = 100
     try:
         batch_size = int(sys.argv[2])
     except IndexError:
@@ -39,18 +39,18 @@ if __name__ == "__main__":
     try:
         unlock = sys.argv[3]
     except IndexError:
-        unlock = False
+        unlock = True
     try:
         weights = sys.argv[4]
     except IndexError:
         weights = None
     print("epoch: %d, batch_size: %d, unlock: %s, weights: %s \n\n" % (epoch, batch_size, unlock, weights))
 
-    for i in [1, 0]:
+    for i in [15]:
         print("epochs: {}, bs: {}, unlock: {}, pesi: {}, opt: {}, lr: {}, mom: {}, nest: {}, dec: {}".format(
             epoch, batch_size, unlock, weights, utility.optimizers[i], utility.lrs[i], utility.moms[i],
             utility.nesterovs[i], utility.decays[i]))
 
         main(epoch, batch_size, unlock, weights, utility.optimizers[i], utility.lrs[i], utility.moms[i],
-             utility.nesterovs[i], utility.decays[i], "new_kf_Open/Close_" + str(i))
+             utility.nesterovs[i], utility.decays[i], "OPEN_NEWFOLD2_sgd29" + str(i))
         print("Training succesfully")

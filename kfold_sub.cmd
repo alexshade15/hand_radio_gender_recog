@@ -30,4 +30,4 @@
 
 # run the application
 srun singularity exec --bind /data/vlongoba:/data /data/sifs/tensorflow2.sif python kfold.py
-# srun singularity exec --bind /data/vlongoba:/data /data/sifs/tensorflow2.sif python jackzen.py
+# srun singularity exec --bind /data/vlongoba:/data /data/sifs/tensorflow2.sif python unet.py

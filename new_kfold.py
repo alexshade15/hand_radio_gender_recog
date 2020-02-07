@@ -1,20 +1,30 @@
-from tensorflow.compat.v2.keras.optimizers import *
+from tensorflow.keras.optimizers import *
 
 import os
 import sys
+import numpy as np
+import kfold_new_indexes
 import utility
 
 
 def main(epoch=10, batch_size=64, unlock=False, weights=None, optimizer=(SGD(), "SGD"), my_lr=0.001, my_momentum=0.9,
          my_nesterov=False, my_decay=0.0, log_name="unnamed"):
-    csv_path = "/data/unified.csv.csv"
-    train_path = '/data/handset/training/'
-    val_path = '/data/handset/validation1/'
-    test_path = '/data/handset/validation2/'
+    csv_path = "/data/new.csv"
+    train_path = '/data/r_r_handset/training/'
+
+    # kf = KFold(n_splits=5, shuffle=True)
+    x = np.array(os.listdir(train_path))
+
+    # for train_index, val_index in kf.split(os.listdir(train_path)):
+    train_index = kfold_new_indexes.training_fold0
+    val_index = kfold_new_indexes.validation_fold0
+
+    training_images = x[train_index]
+    validation_images = x[val_index]
 
     utility.doTraining(epoch, batch_size, optimizer, my_lr, my_momentum, my_nesterov, my_decay, unlock, weights,
-                       csv_path, os.listdir(train_path), train_path, os.listdir(val_path), val_path,
-                       os.listdir(test_path), test_path, log_name)
+                       csv_path, training_images, train_path, validation_images, train_path, validation_images,
+                       train_path, log_name)
 
 
 if __name__ == "__main__":
@@ -44,25 +54,3 @@ if __name__ == "__main__":
         main(epoch, batch_size, unlock, weights, utility.optimizers[i], utility.lrs[i], utility.moms[i],
              utility.nesterovs[i], utility.decays[i], "new_kf_Open/Close_" + str(i))
         print("Training succesfully")
-
-# def test_vgg16():
-#     unlock = True
-#     weights = "path"
-#     mode = 0 # orifinal architecture
-#     model = load_model(unlock, weights, mode)
-#
-#     trainCsvPath = "/data/train.csv"
-#     valCsvPath = "/data/val.csv"
-#     trainPath = '/data/handset/training/'
-#     valPath = '/data/handset/validation1/'
-#     testPath = '/data/handset/validation2/'
-#
-#     n1 = os.listdir(trainPath)
-#     i = 1000
-#     # name, ext = n1[i].split(".")
-#
-#     train_img = cv2.imread("path" + '/' + n1[i])
-#     train_img = cv2.resize(train_img / 255., (512, 512))
-#     train_img = train_img.reshape(512, 512, 3)
-#
-#     print(model.predict(train_img, verbose=1))

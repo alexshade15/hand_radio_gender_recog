@@ -1,7 +1,6 @@
-import tensorflow
-from tensorflow.compat.v2.keras.layers import *
 from tensorflow.compat.v2.keras.optimizers import *
 from tensorflow.compat.v2.keras.callbacks import TensorBoard
+
 import os
 import cv2
 import random
@@ -45,8 +44,7 @@ def data_gen(img_folder, mask_folder, batch_size, aug=None):
 
 
 def myGrid(epoch=50, bs=4):
-
-    learn_rate = [0.01, 0.1] #[0.0001, 0.001, 0.01, 0.1, 0.2, 0.3]
+    learn_rate = [0.01, 0.1]  # [0.0001, 0.001, 0.01, 0.1, 0.2, 0.3]
     momentum = [0.0, 0.2, 0.4, 0.6, 0.8, 0.9]
 
     train_frame_path = '/data/segmentation_ext/train_frames/train/'
@@ -56,8 +54,8 @@ def myGrid(epoch=50, bs=4):
     test_frame_path = '/data/segmentation_ext/test_frames/test/'
     test_mask_path = '/data/segmentation_ext/test_masks/test/'
 
-    NO_OF_EPOCHS = epoch
-    BATCH_SIZE = bs
+    no_of_epochs = epoch
+    batch_size = bs
 
     try:
         for lr in learn_rate:
@@ -67,27 +65,28 @@ def myGrid(epoch=50, bs=4):
                 m.compile(optimizer=SGD(learning_rate=lr, momentum=mom, nesterov=True), loss='binary_crossentropy',
                           metrics=['accuracy'])
 
-                train_gen = data_gen(train_frame_path, train_mask_path, batch_size=BATCH_SIZE)
-                val_gen = data_gen(val_frame_path, val_mask_path, batch_size=BATCH_SIZE)
-                test_gen = data_gen(test_frame_path, test_mask_path, batch_size=BATCH_SIZE)
-                NO_OF_TRAINING_IMAGES = len(os.listdir(train_frame_path))
-                NO_OF_VAL_IMAGES = len(os.listdir(val_frame_path))
-                NO_OF_TEST_IMAGES = len(os.listdir(test_frame_path))
+                train_gen = data_gen(train_frame_path, train_mask_path, batch_size=batch_size)
+                val_gen = data_gen(val_frame_path, val_mask_path, batch_size=batch_size)
+                test_gen = data_gen(test_frame_path, test_mask_path, batch_size=batch_size)
+                no_of_training_images = len(os.listdir(train_frame_path))
+                no_of_val_images = len(os.listdir(val_frame_path))
+                no_of_test_images = len(os.listdir(test_frame_path))
 
-                tbCallBack = TensorBoard(log_dir="log_jackzen", write_graph=True, write_images=True)
-                history = m.fit_generator(train_gen, epochs=NO_OF_EPOCHS, callbacks=[tbCallBack],
-                                          steps_per_epoch=(NO_OF_TRAINING_IMAGES // BATCH_SIZE),
-                                          validation_data=val_gen, validation_steps=(NO_OF_VAL_IMAGES // BATCH_SIZE))
-                score = m.evaluate_generator(test_gen, NO_OF_TEST_IMAGES // BATCH_SIZE)
+                tb_call_back = TensorBoard(log_dir="log_jackzen", write_graph=True, write_images=True)
+                history = m.fit_generator(train_gen, epochs=no_of_epochs, callbacks=[tb_call_back],
+                                          steps_per_epoch=(no_of_training_images // batch_size),
+                                          validation_data=val_gen, validation_steps=(no_of_val_images // batch_size))
+                score = m.evaluate_generator(test_gen, no_of_test_images // batch_size)
+
                 print("\n\nScore: " + str(score))
                 print("train acc " + str(history.history['accuracy']))
                 print("valid acc " + str(history.history['val_accuracy']))
                 print("learningRate: ", lr, "\nmomentum: ", mom)
-                m.save("./models_unet/seg" + "_opt:" + str(optimizer) + "_ep:" + str(NO_OF_EPOCHS) + "_bs:" + str(
-                    BATCH_SIZE) + "_lr:" + str(lr) + "_mom:" + str(mom) + "_loss:" + str(score[1]) + "_acc:" + str(
+                m.save("./models_unet/seg" + "_opt:" + str(optimizer) + "_ep:" + str(no_of_epochs) + "_bs:" + str(
+                    batch_size) + "_lr:" + str(lr) + "_mom:" + str(mom) + "_loss:" + str(score[1]) + "_acc:" + str(
                     score[0]) + ".h5", "w+")
-                f = open("./models_unet/seg" + "_opt:" + str(optimizer) + "_ep:" + str(NO_OF_EPOCHS) + "_bs:" + str(
-                    BATCH_SIZE) + "_lr:" + str(lr) + "_mom:" + str(mom) + "_loss:" + str(score[1]) + "_acc:" + str(
+                f = open("./models_unet/seg" + "_opt:" + str(optimizer) + "_ep:" + str(no_of_epochs) + "_bs:" + str(
+                    batch_size) + "_lr:" + str(lr) + "_mom:" + str(mom) + "_loss:" + str(score[1]) + "_acc:" + str(
                     score[0]) + ".txt", "w+")
                 f.write("train_acc = " + str(history.history['accuracy']) + "\n")
                 f.write("valid_acc = " + str(history.history['val_accuracy']) + "\n")

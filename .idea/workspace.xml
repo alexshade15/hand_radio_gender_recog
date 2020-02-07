@@ -4,13 +4,46 @@
     <list default="true" id="cfc03418-469e-4849-ae26-d7a087b3034e" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/2r_kfold.py" beforeDir="false" afterPath="$PROJECT_DIR$/kfold.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/2r_kfold1.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/2r_kfold3.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/2r_kfold_sub.cmd" beforeDir="false" afterPath="$PROJECT_DIR$/kfold_sub.cmd" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/2r_kfold_sub1.cmd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/2r_kfold_sub3.cmd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/2r_new_kfold.py" beforeDir="false" afterPath="$PROJECT_DIR$/new_kfold.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/2r_new_kfold1.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/2r_new_kfold_sub.cmd" beforeDir="false" afterPath="$PROJECT_DIR$/new_kfold_sub.cmd" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/2r_new_kfold_sub1.cmd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/GenderPrediction.py" beforeDir="false" afterPath="$PROJECT_DIR$/GenderPrediction_toRef.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Thresholding.py" beforeDir="false" afterPath="$PROJECT_DIR$/Thresholding.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/jackzen.py" beforeDir="false" afterPath="$PROJECT_DIR$/jackzen.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kfold2.py" beforeDir="false" afterPath="$PROJECT_DIR$/kfold_new_indexes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kfolds.py" beforeDir="false" afterPath="$PROJECT_DIR$/kfold_indexes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/model.py" beforeDir="false" afterPath="$PROJECT_DIR$/model.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/segmentationTest.py" beforeDir="false" afterPath="$PROJECT_DIR$/segmentationTest.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/vgg16.py" beforeDir="false" afterPath="$PROJECT_DIR$/vgg16.py" afterDir="false" />
     </list>
-    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="DatabaseView">
+    <option name="SHOW_INTERMEDIATE" value="true" />
+    <option name="GROUP_DATA_SOURCES" value="true" />
+    <option name="GROUP_SCHEMA" value="true" />
+    <option name="GROUP_CONTENTS" value="false" />
+    <option name="SORT_POSITIONED" value="false" />
+    <option name="SHOW_EMPTY_GROUPS" value="false" />
+    <option name="AUTO_SCROLL_FROM_SOURCE" value="false" />
+    <option name="HIDDEN_KINDS">
+      <set />
+    </option>
+    <expand />
+    <select />
+  </component>
+  <component name="FavoritesManager">
+    <favorites_list name="testForRadio" />
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -22,11 +55,26 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/jackzen.py" root0="FORCE_HIGHLIGHTING" />
+  </component>
   <component name="ProjectId" id="1Qe9SSljcsNtuLJIIYeolBcIOXL" />
-  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
+    <ConfirmationsSetting value="1" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="true" />
+    <option name="showLibraryContents" value="true" />
+    <option name="showMembers" value="true" />
+    <option name="sortByType" value="true" />
+  </component>
   <component name="PropertiesComponent">
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
-    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+    <property name="run.code.analysis.last.selected.profile" value="aDefault" />
+    <property name="settings.editor.selected.configurable" value="project.propVCSSupport.Mappings" />
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
@@ -36,19 +84,29 @@
       <recent name="$PROJECT_DIR$/" />
     </key>
   </component>
-  <component name="RunDashboard">
-    <option name="ruleStates">
-      <list>
-        <RuleState>
-          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
-        </RuleState>
-        <RuleState>
-          <option name="name" value="StatusDashboardGroupingRule" />
-        </RuleState>
-      </list>
-    </option>
-  </component>
-  <component name="RunManager" selected="Python.segmentationTest">
+  <component name="RunManager" selected="Python.Esercizio2_28-10(sharpening)">
+    <configuration name="Esercizio2_28-10(sharpening)" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="testForRadio" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$USER_HOME$/Downloads" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$USER_HOME$/Downloads/Esercizio2_28-10(sharpening).py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="Thresholding" type="PythonConfigurationType" factoryName="Python">
       <module name="testForRadio" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -61,6 +119,7 @@
       <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Thresholding.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
@@ -70,7 +129,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="cropping" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration name="cropping (1)" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="testForRadio" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -78,11 +137,12 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/oldCode" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/cropping.py" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/oldCode/cropping.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -91,7 +151,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="edgeDetection" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration name="jackzen" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="testForRadio" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -103,7 +163,8 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/edgeDetection.py" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/jackzen.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -112,7 +173,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="segmentation" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration name="plot" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="testForRadio" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -124,7 +185,8 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/segmentation.py" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/plot.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -145,28 +207,8 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/segmentationTest.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="test" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <module name="testForRadio" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/test.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -177,24 +219,24 @@
     </configuration>
     <list>
       <item itemvalue="Python.Thresholding" />
-      <item itemvalue="Python.cropping" />
-      <item itemvalue="Python.test" />
-      <item itemvalue="Python.edgeDetection" />
-      <item itemvalue="Python.segmentation" />
       <item itemvalue="Python.segmentationTest" />
+      <item itemvalue="Python.plot" />
+      <item itemvalue="Python.cropping (1)" />
+      <item itemvalue="Python.jackzen" />
+      <item itemvalue="Python.Esercizio2_28-10(sharpening)" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.Esercizio2_28-10(sharpening)" />
+        <item itemvalue="Python.plot" />
+        <item itemvalue="Python.jackzen" />
+        <item itemvalue="Python.cropping (1)" />
         <item itemvalue="Python.segmentationTest" />
-        <item itemvalue="Python.segmentation" />
-        <item itemvalue="Python.edgeDetection" />
-        <item itemvalue="Python.cropping" />
-        <item itemvalue="Python.test" />
       </list>
     </recent_temporary>
   </component>
   <component name="SvnConfiguration">
-    <configuration />
+    <configuration>$USER_HOME$/.subversion</configuration>
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
@@ -203,8 +245,18 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1568120194907</updated>
+      <workItem from="1580888852950" duration="3649000" />
+      <workItem from="1580915732896" duration="13000" />
+      <workItem from="1580922173701" duration="1547000" />
+      <workItem from="1580983360273" duration="7233000" />
+      <workItem from="1580995541165" duration="677000" />
+      <workItem from="1580996251690" duration="241000" />
+      <workItem from="1581025518686" duration="3355000" />
     </task>
     <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
     <option name="TAB_STATES">
@@ -218,5 +270,29 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <ignored-roots>
+      <path value="$PROJECT_DIR$/THESIS-BoneGenderRecognition" />
+    </ignored-roots>
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="575" y="264" key="#com.intellij.openapi.keymap.impl.ui.EditKeymapsDialog" timestamp="1580995528800">
+      <screen x="0" y="0" width="1920" height="1200" />
+    </state>
+    <state x="575" y="264" key="#com.intellij.openapi.keymap.impl.ui.EditKeymapsDialog/0.0.1920.1200@0.0.1920.1200" timestamp="1580995528800" />
+    <state x="705" y="463" key="ANALYSIS_DLG_com.intellij.analysis.BaseAnalysisAction$1" timestamp="1580996357769">
+      <screen x="0" y="0" width="1920" height="1200" />
+    </state>
+    <state x="705" y="463" key="ANALYSIS_DLG_com.intellij.analysis.BaseAnalysisAction$1/0.0.1920.1200@0.0.1920.1200" timestamp="1580996357769" />
+    <state x="592" y="174" key="SettingsEditor" timestamp="1581063365452">
+      <screen x="0" y="0" width="1920" height="1200" />
+    </state>
+    <state x="592" y="174" key="SettingsEditor/0.0.1920.1200@0.0.1920.1200" timestamp="1581063365452" />
+    <state x="461" y="232" key="SettingsEditor/0.23.1920.1110@0.23.1920.1110" timestamp="1580922331812" />
+    <state x="625" y="271" width="670" height="676" key="search.everywhere.popup" timestamp="1580995761467">
+      <screen x="0" y="0" width="1920" height="1200" />
+    </state>
+    <state x="625" y="271" width="670" height="676" key="search.everywhere.popup/0.0.1920.1200@0.0.1920.1200" timestamp="1580995761467" />
   </component>
 </project>

@@ -2,9 +2,6 @@ import cv2
 import os
 from matplotlib import pyplot as plt
 
-
-# import keyboard
-
 def plot_histogram(histogram, name):
     plt.figure()
     plt.title(name + " - Grayscale Histogram")

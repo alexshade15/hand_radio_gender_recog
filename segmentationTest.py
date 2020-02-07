@@ -46,7 +46,8 @@ def generateMasks(path, dest, folder, w_name):
         name, ext = image.split(".")
 
         if ext == "png":
-            print("\n\n", images_folder + image, "---", str(i) + "/" + str(num_images), "---", "%" + str(int(100 * i / num_images)))
+            print("\n\n", images_folder + image, "---", str(i) + "/" + str(num_images), "---",
+                  "%" + str(int(100 * i / num_images)))
             i += 1
             img_input = cv2.imread(images_folder + image, cv2.IMREAD_GRAYSCALE) / 255.
             img_input = cv2.resize(img_input, (512, 512))
@@ -67,7 +68,7 @@ def generateMasks(path, dest, folder, w_name):
                     cv2.drawContours(my_mask, [c], -1, 0, -1)
             my_mask = cv2.bitwise_not(my_mask)
             out_mask = cv2.bitwise_and(my_mask, my_mask, mask=mask)
-            #out_mask = imFill(out_mask)  # fills holes in the hands if they occurs
+            # out_mask = imFill(out_mask)  # fills holes in the hands if they occurs
             cv2.imwrite(dest + folder + image, out_mask)
             print('save to:' + dest + folder + image)
 
@@ -93,11 +94,11 @@ def maskApply(imgPath, maskPath, dataset_type, dest):
     maskPath = maskPath + dataset_type
     img_list = os.listdir(imgPath)
     mask_list = os.listdir(maskPath)
-    #masked_list = os.listdir('/data/reduced_handset/' + dataset_type)
+    # masked_list = os.listdir('/data/reduced_handset/' + dataset_type)
     for img in img_list:
         print("\n\nImage name: ", img)
         mask_name = img
-        if mask_name in mask_list: #and not(mask_name in masked_list):
+        if mask_name in mask_list:  # and not(mask_name in masked_list):
             image = cv2.imread(imgPath + img)
             mask = cv2.imread(maskPath + mask_name, cv2.IMREAD_GRAYSCALE)
             res = cv2.bitwise_and(image, image, mask=mask)
@@ -112,7 +113,7 @@ def maskApply(imgPath, maskPath, dataset_type, dest):
             cv2.imwrite(dest + dataset_type + img, image)
             print("saved")
         else:
-            if not(mask_name in mask_list):
+            if not (mask_name in mask_list):
                 print("Errore, " + img + " non presente nelle maschere.", file=sys.stderr)
 
 
@@ -134,6 +135,7 @@ def test():
     preds_train = m.predict(train_frame_img, verbose=1)
     preds_train_t = (preds_train > 0.3).astype(np.uint8)
     plot_sample(train_frame_img, train_frame_img, preds_train, preds_train_t)
+
 
 generateMasks("/data/test_normalized/", "/data/test_masks/", "", "unet_w986.h5")
 imFill("/data/test_masks/")

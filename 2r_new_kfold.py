@@ -5,8 +5,10 @@ from tensorflow.compat.v2.keras.applications.vgg16 import VGG16
 from tensorflow.compat.v2.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.compat.v2.keras import backend as K
 from tensorflow.compat.v2.keras.callbacks import EarlyStopping
+from tensorflow.compat.v2.keras.callbacks import TensorBoard
 
 from sklearn.preprocessing import LabelBinarizer
+from sklearn.model_selection import KFold
 import numpy as np
 import os
 import random
@@ -14,11 +16,12 @@ import cv2
 import sys
 from datetime import datetime
 import traceback
+import kfold2 as kfolds
 
 
-def csv_image_generator(dictLabs, imgPath, batch_size, lb, mode="train", aug=None):
+def csv_image_gen(dictLabs, listImages, imgPath, batch_size, lb, mode="train", aug=None):
     c = 0
-    n1 = os.listdir(imgPath)  # List of training images
+    n1 = listImages  # List of training images
     random.shuffle(n1)
     while True:
         labels = []
@@ -31,7 +34,7 @@ def csv_image_generator(dictLabs, imgPath, batch_size, lb, mode="train", aug=Non
             img[i - c] = train_img  # add to array - img[0], img[1], and so on.
             labels.append(dictLabs[number])
         c += batch_size
-        if c + batch_size >= len(os.listdir(imgPath)):
+        if c + batch_size >= len(n1):
             c = 0
             random.shuffle(n1)
             if mode == "eval":
@@ -39,51 +42,64 @@ def csv_image_generator(dictLabs, imgPath, batch_size, lb, mode="train", aug=Non
         labels = lb.transform(np.array(labels))
         if aug is not None:
             (img, labels) = next(aug.flow(img, labels, batch_size=batch_size))
+        #print(img, "\n\n\n", labels)
         yield img, labels
 
 
-def main(epoch=10, bs=64, unlock=False, weights=None, optimizer=(SGD(), "SGD"), lr=0.001, mom=0.9, nesterov=False,
-         decay=0.0):
+def load_model(unlock, weights, mode=0):
+    vgg_conv = VGG16(include_top=False, weights='imagenet', input_shape=(512, 512, 3))
+
+    if unlock:
+        for layer in vgg_conv.layers[:-4]:
+            layer.trainable = False
+    else:
+        for layer in vgg_conv.layers:
+            layer.trainable = False
+    vgg_conv.summary()
+
+    model = Sequential()
+    model.add(vgg_conv)
+
+    if mode == 0:
+        model.add(GlobalAveragePooling2D())
+    else:
+        model.add(Flatten())
+        model.add(Dense(512, activation='relu'))
+        model.add(Dropout(0.5))
+    model.add(Dense(1, activation='sigmoid'))
+    model.summary()
+
+    #for layer in model:
+    #print(model.layers)
+        #print(layer.input_shape, layer.output_shape, "\n\n")
+
+    if weights is not None:
+        model.load_weights(weights)
+
+    return model
+
+
+def main(epoch=10, bs=64, unlock=False, weights=None, optimizer=(SGD(), "SGD"), my_lr=0.001, my_momentum=0.9,
+         my_nesterov=False, my_decay=0.0):
     try:
         # initialize the paths to our training and testing CSV files
-        trainCsvPath = "/data/train.csv"
-        valCsvPath = "/data/val.csv"
-        trainPath = '/data/handset/training/'
-        valPath = '/data/handset/validation1/'
-        testPath = '/data/handset/validation2/'
-
-        # initialize the number of epochs to train for and batch size
-        NUM_EPOCHS = epoch
-        BATCH_SIZE = bs
-
-        # initialize the total number of training and testing image
-        NUM_TRAIN_IMAGES = len(os.listdir(trainPath))
-        NUM_VAL_IMAGES = len(os.listdir(valPath))
-        NUM_TEST_IMAGES = len(os.listdir(testPath))
+        #trainCsvPath = "/data/train.csv"
+        csvPath = "/data/new.csv"
+        trainPath = '/data/r_r_handset/training/'
+        # valPath = '/data/handset/validation1/'
+        # testPath = '/data/handset/validation2/'
 
         # open the training CSV file, then initialize the unique set of class
         # labels in the dataset along with the testing labels
-        f = open(trainCsvPath, "r")
+        f = open(csvPath, "r")
         f.readline()
         labels = set()
-        trainLabs = {}
-        valLabs = {}
+        csvLabs = {}
         for line in f:
-            # extract the class label, update the labels list, and increment
-            # the total number of training images
-            line_content = line.strip().split(",")
-            label = line_content[2]
-            trainLabs[line_content[0]] = line_content[2]
-            labels.add(label)
-        f.close()
-        f = open(valCsvPath, "r")
-        f.readline()
-        for line in f:
-            # extract the class label, update the test labels list, and
-            # increment the total number of testing images
             line_content = line.strip().split(",")
             label = line_content[1]
-            valLabs[line_content[0]] = line_content[1]
+            csvLabs[line_content[0]] = line_content[1]
+            labels.add(label)
         f.close()
 
         # create the label binarizer for one-hot encoding labels, then encode the testing labels
@@ -100,69 +116,64 @@ def main(epoch=10, bs=64, unlock=False, weights=None, optimizer=(SGD(), "SGD"), 
             horizontal_flip=True,
             fill_mode="nearest")
 
-        # initialize both the training and testing image generators
-        trainGen = csv_image_generator(trainLabs, trainPath, BATCH_SIZE, lb, mode="train", aug=aug)
-        valGen = csv_image_generator(valLabs, valPath, BATCH_SIZE, lb, mode="train", aug=None)
-        testGen = csv_image_generator(valLabs, testPath, BATCH_SIZE, lb, mode="train", aug=None)
+        # kf = KFold(n_splits=5, shuffle=True)
+        X = np.array(os.listdir(trainPath))
 
-        # initialize our Keras model and compile it
-        vgg_conv = VGG16(include_top=False, weights='imagenet', input_shape=(512, 512, 3))
+        # for train_index, val_index in kf.split(os.listdir(trainPath)):
+        train_index = kfolds.training_fold0
+        val_index = kfolds.validation_fold0
+        print("################################", len(train_index), len(val_index))
+        NUM_TRAIN_IMAGES = len(train_index)
+        NUM_VAL_IMAGES = len(val_index)
 
-        if unlock:
-            for layer in vgg_conv.layers[:-4]:
-                layer.trainable = False
-        else:
-            for layer in vgg_conv.layers:
-                layer.trainable = False
+        #print("\n\n", NUM_TRAIN_IMAGES, NUM_VAL_IMAGES)
 
-        model = Sequential()
-        model.add(vgg_conv)
+        trainingImages = X[train_index]
+        validationImages = X[val_index]
 
-        model.add(Flatten())
-        model.add(Dense(512, activation='relu'))
-        model.add(Dropout(0.5))
-        # model.add(GlobalAveragePooling2D())
-        model.add(Dense(1, activation='sigmoid'))
-        model.summary()
+        # initialize both the trainvving and testing image generators
+        trainGen = csv_image_gen(csvLabs, trainingImages, trainPath, bs, lb, mode="train", aug=None)
+        valGen = csv_image_gen(csvLabs, validationImages, trainPath, bs, lb, mode="train", aug=None)
+        # testGen = csv_image_gen(csvLabs, os.listdir(testImages), trainPath, bs, lb, mode="eval", aug=None)
 
-        if weights is not None:
-            model.load_weights(weights)
-        my_lr = lr
-        my_decay = decay
-        my_momentum = mom
-        my_nesterov = nesterov
+        model = load_model(unlock, weights, 0)
+
+        NUM_TEST_IMAGES = NUM_VAL_IMAGES
         opt = optimizer[1]
         my_opt = optimizer[0]
         model.compile(loss='binary_crossentropy', optimizer=my_opt, metrics=['accuracy'])
 
-        es = EarlyStopping(monitor='val_loss', verbose=1, patience=20)
+        tbCallBack = TensorBoard(log_dir="log_NEWFOLD_ADAM_tb_1_0", write_graph=True, write_images=True)
+        # es = EarlyStopping(monitor='val_loss', verbose=1, patience=20)
 
-        history = model.fit_generator(trainGen, epochs=NUM_EPOCHS, verbose=1, callbacks=[es],
-                                      steps_per_epoch=(NUM_TRAIN_IMAGES // BATCH_SIZE),
+        history = model.fit_generator(trainGen, epochs=epoch, verbose=1, callbacks=[tbCallBack],
                                       validation_data=valGen,
-                                      validation_steps=(NUM_VAL_IMAGES // BATCH_SIZE))
+                                      validation_steps=(NUM_VAL_IMAGES // bs),
+                                      steps_per_epoch=(NUM_TRAIN_IMAGES // bs))
 
-        score = model.evaluate_generator(testGen, NUM_TEST_IMAGES // BATCH_SIZE)
+        score = [0, 0] #model.evaluate_generator(valGen, NUM_TEST_IMAGES // bs)
 
         dateTimeObj = datetime.now()
 
-        name_model = "_opt:" + str(opt) + "_ep:" + str(epoch) + "_bs:" + str(bs) + "_lr:" + str(my_lr) + "_mom:" + str(
-            my_momentum) + "_nest:" + str(my_nesterov) + "_dec:" + str(my_decay) + "_unlock:" + str(
-            unlock) + "_acc:" + str(score[1]) + "_loss:" + str(score[0])
-        weights_name = 'models_vgg/fine_vgg16' + name_model + "_date:" + str(dateTimeObj) + '.h5'
+        name_model = "_opt:" + str(opt) + "_ep:" + str(epoch) + "_bs:" + str(bs) + "_lr:" + str(
+            my_lr) + "_mom:" + str(my_momentum) + "_nest:" + str(my_nesterov) + "_dec:" + str(
+            my_decay) + "_unlock:" + str(unlock) + "_acc:" + str(score[1]) + "_loss:" + str(score[0])
+        weights_name = 'models_kfold_vgg/fine_vgg16_' + name_model + "_date:" + str(dateTimeObj) + '.h5'
         model.save(weights_name)
-        f = open("models_vgg/training_log" + name_model + "_date:" + str(dateTimeObj) + ".txt", "w+")
+        f = open("models_kfold_vgg/training_log" + name_model + "_date:" + str(dateTimeObj) + ".txt", "w+")
         f.write("train_acc = " + str(history.history['accuracy']) + "\n")
         f.write("valid_acc = " + str(history.history['val_accuracy']) + "\n")
         f.write("train_loss = " + str(history.history['loss']) + "\n")
         f.write("valid_loss = " + str(history.history['val_loss']) + "\n")
         f.write("Score\n")
         f.write("Loss test " + str(score[0]) + "\n")
-        f.write("Acc test " + str(score[1]) + "\n")
+        f.write("Acc test " + str(score[1]) + "\n\n\n")
+        f.write("training_set = " + str(train_index) + "\n")
+        f.write("test_set = " + str(val_index) + "\n")
         f.close()
         return weights_name
     except Exception:
-        f = open("models_vgg/error_log" + name_model + "_date:" + str(dateTimeObj) + ".txt", "w+")
+        f = open("models_kfold_vgg/error_log" + name_model + "_date:" + str(dateTimeObj) + ".txt", "w+")
         f.write(traceback.format_exc())
         f.write(str(sys.exc_info()[2]))
         f.close()
@@ -182,15 +193,15 @@ if __name__ == "__main__":
     try:
         unlock = sys.argv[3]
     except:
-        unlock = None
+        unlock = False
     try:
         weights = sys.argv[4]
     except:
-        weights = None
+        weights = None #"./architecture_w_75.h5"
     print("epoch: %d, batch_size: %d, unlock: %s, weights: %s \n\n" % (epoch, batch_size, unlock, weights))
 
     optimizers = []
-    lrs = [0.0001, 0.0001,
+    lrs = [0.01, 0.1,
            0.00001, 0.0001, 0.001,
            0.0001, 0.001,
            0.01, 0.001, 0.0001,
@@ -200,7 +211,7 @@ if __name__ == "__main__":
            0.00001, 0.00001, 0.00001, 0.00001, 0.00001, 0.00001,
            0.01, 0.001, 0.0001,
            0.01, 0.001, 0.0001]
-    moms = [.9, .9,
+    moms = [None, None,
             None, None, None,
             None, None,
             .9, .9, .9,
@@ -210,7 +221,7 @@ if __name__ == "__main__":
             .0, .2, .4, .6, .8, .9,
             .9, .9, .9,
             .9, .9, .9]
-    nesterovs = [False, True,
+    nesterovs = [None, None,
                  None, None, None,
                  None, None,
                  True, True, True,
@@ -229,10 +240,10 @@ if __name__ == "__main__":
               None, None, None, None, None, None,
               None, None, None, None, None, None,
               1e-6, 1e-6, 1e-6,
-              1e-6, 1e-6, 1e-6]
+              5e-5, 1e-6, 1e-6]
 
-    optimizers.append((SGD(lr=lrs[0], momentum=moms[0]), "SGD"))
-    optimizers.append((SGD(lr=lrs[1], momentum=moms[1], nesterov=nesterovs[1]), "SGD"))
+    optimizers.append((Adam(lr=lrs[0]), "Adam"))
+    optimizers.append((Adam(lr=lrs[1]), "Adam"))
     optimizers.append((Adam(lr=lrs[2]), "Adam"))
     optimizers.append((Adam(lr=lrs[3]), "Adam"))
     optimizers.append((Adam(lr=lrs[4]), "Adam"))
@@ -278,7 +289,8 @@ if __name__ == "__main__":
     optimizers.append((SGD(lr=lrs[38], momentum=moms[38], nesterov=nesterovs[38], decay=decays[38]), "SGD"))
     optimizers.append((SGD(lr=lrs[39], momentum=moms[39], nesterov=nesterovs[39], decay=decays[39]), "SGD"))
 
-    for i in [2, 3]:
+    for i in [1, 0]:
+        print("epochs: {}, bs: {}, unlock: {}, pesi: {}, opt: {}, lr: {}, mom: {}, nest: {}, dec: {}".format(epoch,batch_size, unlock, weights, optimizers[i], lrs[i], moms[i], nesterovs[i], decays[i]))
         main(epoch, batch_size, unlock, weights, optimizers[i], lrs[i], moms[i], nesterovs[i], decays[i])
         K.clear_session()
-    print("Training succesfully")
+        print("Training succesfully")

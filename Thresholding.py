@@ -2,14 +2,24 @@ import cv2
 import os
 from matplotlib import pyplot as plt
 
+
 def plot_histogram(histogram, name):
-    plt.figure()
+    plt.figure(name.split(".")[0])
     plt.title(name + " - Grayscale Histogram")
     plt.xlabel("grayscale value")
     plt.ylabel("pixels")
     plt.xlim([0, 256])
     plt.plot(histogram)
     plt.show()
+
+
+def resize(image):
+    scale_percent = 40  # percent of original size
+    width = int(image.shape[1] * scale_percent / 100)
+    height = int(image.shape[0] * scale_percent / 100)
+    dim = (width, height)
+    # resize image
+    return cv2.resize(image, dim, interpolation=cv2.INTER_AREA)
 
 
 def thresholda(origin_path, dest_path, name):
@@ -25,40 +35,42 @@ def thresholda(origin_path, dest_path, name):
             while ok >= 2:
                 if ok == 3:
                     plot_histogram(histogram, name)
-
                 k = 11
-                if ok > 10:
+                if ok >= 51:
                     t = ok
                 else:
                     t = int(input('Enter the threshold: '))
                 blur = cv2.cvtColor(src=image, code=cv2.COLOR_BGR2GRAY)
                 blur = cv2.GaussianBlur(src=blur, ksize=(k, k), sigmaX=0)
+                # clahe = cv2.createCLAHE(clipLimit=3, tileGridSize=(64, 64))
+                # blur = clahe.apply(blur)
                 (t, maskLayer) = cv2.threshold(src=blur, thresh=t, maxval=255, type=cv2.THRESH_BINARY)
-                myMask2 = cv2.merge(mv=[maskLayer, maskLayer, maskLayer])
+                my_mask2 = cv2.merge(mv=[maskLayer, maskLayer, maskLayer])
 
                 contours, hierarchy = cv2.findContours(maskLayer, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
                 c = max(contours, key=cv2.contourArea)
-                cLen = cv2.arcLength(c, True)
+                c_len = cv2.arcLength(c, True)
 
                 for contour in contours:
-                    contourLen = cv2.arcLength(contour, True)
-                    if contourLen < cLen:
-                        cv2.drawContours(myMask2, [c], -1, 0, -1)
-                myMask2 = cv2.bitwise_not(myMask2)
-                myMask = cv2.bitwise_and(myMask2, myMask2, mask=maskLayer)
+                    contour_len = cv2.arcLength(contour, True)
+                    if contour_len < c_len:
+                        cv2.drawContours(my_mask2, [c], -1, 0, -1)
+                my_mask2 = cv2.bitwise_not(my_mask2)
+                my_mask = cv2.bitwise_and(my_mask2, my_mask2, mask=maskLayer)
                 while True:
-                    cv2.imshow("Before", image)
-                    cv2.imshow("After", myMask)
+
+                    cv2.imshow("Before", resize(image))
+                    cv2.imshow("After", resize(my_mask))
                     if cv2.waitKey(33) == 27:
                         break
                 cv2.waitKey(delay=10)
                 ok = int(input("ok? y-1, n/r-2, n/r/h-3: "))
                 if ok == 1 or ok == -1 or ok == -2:
-                    if ok == -2:
-                        cv2.imwrite(dest_path + 'masks/' + "temp_" + str(t) + "_" + str(name), myMask)
-                    else:
-                        cv2.imwrite(dest_path + 'masks/' + str(name), myMask)
-                    cv2.imwrite(dest_path + 'frames/' + str(name), image)
+                    # if ok == -2:
+                    #     cv2.imwrite(dest_path + 'masks/' + "temp_" + str(t) + "_" + str(name), my_mask)
+                    # else:
+                    #     cv2.imwrite(dest_path + 'masks/' + str(name), my_mask)
+                    # cv2.imwrite(dest_path + 'frames/' + str(name), image)
                     print(dest_path + 'frames/' + str(name))
                     print(os.listdir(dest_path))
                     print(os.getcwd())
@@ -71,15 +83,28 @@ def thresholda(origin_path, dest_path, name):
 
 
 if __name__ == "__main__":
-    origin_path = "/Users/alex/Desktop/new_normalized_training/"
-    dest_path = "/Users/alex/Desktop/new_groundtruth/"
-    k = [3128, 3131, 3133, 3134, 3136, 3137, 3138, 3140, 3141, 3142, 3143]
-    k += [3144, 3145, 3145, 3148, 3149, 3151, 3153, 3156, 3157, 3164, 3165]
-    k += [3167, 3169, 3172, 3175, 3176, 3179, 3181, 3182, 3183, 3185, 3186]
-    k += [3187, 3188, 3189, 3196, 3200, 3201, 3202, 3204, 3205, 3211, 3213]
+    origin_path = "/Users/alex/Desktop/hist/"
 
+    # list_mod_post_threshold = [14392, 1804, 12091, 1810, 8834, 6831, 1379, 1476, 1497]
+    # list_also_bad_unet_segmentation = [1388, 1402, 1406, 1407, 1418, 1426, 1469, 1518, 1541, 1559, 1596, 1601, 1701,
+    #                                    1826, 1840]
+    # definitivamente = [1431, 1494]
+    # only_unet = [1489]
+
+    # for image_name in image_list:
+    #     image = cv2.imread(filename=path+str(image_name)+".png")
+    #     histogram = cv2.calcHist(images=[image], channels=[0], mask=None, histSize=[256], ranges=[0, 256])
+    #
+    #     plot_histogram(histogram, str(image_name))
+    #     cv2.imshow(str(image_name), image)
+
+    # origin_path = "/Users/alex/Desktop/new_normalized_training/"
+    dest_path = "/Users/alex/Desktop/new_groundtruth/"
+    k = os.listdir(origin_path)
     for index, elem in enumerate(k):
-        k[index] = str(elem) + ".png"
+        # k[index] = str(elem) + ".png"
+        if "hist" in elem:
+            k.remove(elem)
 
     print(len(k))
     for elem in k:

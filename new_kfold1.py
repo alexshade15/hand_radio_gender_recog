@@ -22,9 +22,9 @@ def main(epoch=10, batch_size=64, unlock=False, weights=None, optimizer=(SGD(), 
     training_images = x[train_index]
     validation_images = x[val_index]
 
-    utility.doTraining(epoch, batch_size, optimizer, my_lr, my_momentum, my_nesterov, my_decay, unlock, weights,
-                       csv_path, training_images, train_path, validation_images, train_path, validation_images,
-                       train_path, log_name)
+    utility.do_training(epoch, batch_size, optimizer, my_lr, my_momentum, my_nesterov, my_decay, unlock, weights,
+                        csv_path, training_images, train_path, validation_images, train_path, validation_images,
+                        train_path, log_name)
 
 
 if __name__ == "__main__":

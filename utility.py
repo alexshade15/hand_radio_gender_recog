@@ -1,29 +1,29 @@
 from numpy.random import seed
 seed(1)
 from tensorflow.compat.v1 import set_random_seed
-set_random_seed(2)
+set_random_seed(1)
 
-from tensorflow.compat.v2.keras.models import Sequential
-from tensorflow.compat.v2.keras.layers import *
-from tensorflow.compat.v2.keras.optimizers import *
-from tensorflow.compat.v2.keras.applications.vgg16 import VGG16
-from tensorflow.compat.v2.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.compat.v2.keras.callbacks import TensorBoard
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import *
+from tensorflow.keras.optimizers import *
+from tensorflow.keras.applications.vgg16 import VGG16
+from tensorflow.keras.applications.resnet50 import ResNet50
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.callbacks import TensorBoard
 # from tensorflow.compat.v2.keras.callbacks import EarlyStopping
 
 from sklearn.preprocessing import LabelBinarizer
 import numpy as np
 import random
 import cv2
-import csv
 import sys
 import traceback
 from datetime import datetime
 
 
-def csv_image_gen(dictLabs, listImages, imgPath, batch_size, lb, mode="train", aug=None):
+def csv_image_gen(dict_labs, list_images, imgPath, batch_size, lb, mode="train", aug=None):
     c = 0
-    n1 = listImages  # List of training images
+    n1 = list_images  # List of training images
     random.shuffle(n1)
     while True:
         labels = []
@@ -34,7 +34,7 @@ def csv_image_gen(dictLabs, listImages, imgPath, batch_size, lb, mode="train", a
             train_img = train_img.reshape(512, 512, 3)
             number, ext = n1[i].split(".")
             img[i - c] = train_img  # add to array - img[0], img[1], and so on.
-            labels.append(dictLabs[number])
+            labels.append(dict_labs[number])
         c += batch_size
         if c + batch_size >= len(n1):
             c = 0
@@ -47,15 +47,18 @@ def csv_image_gen(dictLabs, listImages, imgPath, batch_size, lb, mode="train", a
         yield img, labels
 
 
-def load_model(unlock, weights, mode=0):
-    vgg_conv = VGG16(include_top=False, weights='imagenet', input_shape=(512, 512, 3))
+def load_model(unlock, weights, mode=0, base_architecture="vgg16"):
+    if base_architecture == "vgg16":
+        base_net = VGG16(include_top=False, weights='imagenet', input_shape=(512, 512, 3))
+    elif base_architecture == "resnet":
+        base_net = ResNet50(include_top=False, weights='imagenet', input_shape=(512, 512, 3))
 
-    for layer in vgg_conv.layers:
+    for layer in base_net.layers:
         layer.trainable = False
-    vgg_conv.summary()
+    base_net.summary()
 
     model = Sequential()
-    model.add(vgg_conv)
+    model.add(base_net)
 
     if mode == 0:
         model.add(GlobalAveragePooling2D())
@@ -69,14 +72,14 @@ def load_model(unlock, weights, mode=0):
     if weights is not None:
         model.load_weights(weights)
 
-    if unlock:
-        for layer in model.layers[0].layers[-4:]:
+    if unlock >= 1:
+        for layer in model.layers[0].layers[-(4*unlock):]:
             layer.trainable = True
 
     return model
 
 
-def getLabels(csv_path):
+def get_labels(csv_path):
     f = open(csv_path, "r")
     # removes the first line of the the csv, which is "id,male"
     f.readline()
@@ -94,9 +97,10 @@ def getLabels(csv_path):
     return lb, csv_labs
 
 
-def doTraining(epoch, batch_size, optimizer, my_lr, my_momentum, my_nesterov, my_decay, unlock, weights, csv_path,
-               training_images, train_path, validation_images, val_path, test_images, test_path, log_name):
-    lb, csv_labs = getLabels(csv_path)
+def do_training(epoch, batch_size, optimizer, my_lr, my_momentum, my_nesterov, my_decay, unlock, weights, csv_path,
+                training_images, train_path, validation_images, val_path, test_images, test_path, log_name,
+                base_architecture):
+    lb, csv_labs = get_labels(csv_path)
 
     train_gen = csv_image_gen(csv_labs, training_images, train_path, batch_size, lb, mode="train", aug=None)
     val_gen = csv_image_gen(csv_labs, validation_images, val_path, batch_size, lb, mode="train", aug=None)
@@ -106,7 +110,7 @@ def doTraining(epoch, batch_size, optimizer, my_lr, my_momentum, my_nesterov, my
     num_val_images = len(validation_images)
     num_test_images = len(test_images)
 
-    model = load_model(unlock, weights, 0)
+    model = load_model(unlock, weights, 0, base_architecture=base_architecture)
 
     opt = optimizer[1]
     my_opt = optimizer[0]
@@ -123,11 +127,11 @@ def doTraining(epoch, batch_size, optimizer, my_lr, my_momentum, my_nesterov, my
     score = [history.history['val_loss'], history.history['val_accuracy']]
     model.evaluate_generator(test_gen, num_test_images // batch_size)
 
-    writeInfo(model, score, history, epoch, batch_size, unlock, opt, my_lr, my_momentum, my_nesterov, my_decay)
+    write_info(model, score, history, epoch, batch_size, unlock, opt, my_lr, my_momentum, my_nesterov, my_decay)
 
 
-def writeInfo(model, score, history, epoch, bs, opt, my_lr, my_momentum=None, my_nesterov=None, my_decay=None,
-              unlock=None):
+def write_info(model, score, history, epoch, bs, opt, my_lr, my_momentum=None, my_nesterov=None, my_decay=None,
+               unlock=None):
     try:
         date_time_obj = datetime.now()
         name_model = "_opt:" + str(opt) + "_ep:" + str(epoch) + "_bs:" + str(bs) + "_lr:" + str(my_lr) + "_mom:"

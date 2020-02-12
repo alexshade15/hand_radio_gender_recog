@@ -12,9 +12,9 @@ def main(epoch=10, batch_size=64, unlock=False, weights=None, optimizer=(SGD(), 
     val_path = '/data/original_r2_handset/validation1/'
     test_path = '/data/original_r2_handset/validation2/'
 
-    utility.doTraining(epoch, batch_size, optimizer, my_lr, my_momentum, my_nesterov, my_decay, unlock, weights,
-                       csv_path, os.listdir(train_path), train_path, os.listdir(val_path), val_path,
-                       os.listdir(test_path), test_path, log_name)
+    utility.do_training(epoch, batch_size, optimizer, my_lr, my_momentum, my_nesterov, my_decay, unlock, weights,
+                        csv_path, os.listdir(train_path), train_path, os.listdir(val_path), val_path,
+                        os.listdir(test_path), test_path, log_name, base_architecture="resnet")
 
 
 if __name__ == "__main__":

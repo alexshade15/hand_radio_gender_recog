@@ -12,6 +12,7 @@ import model
 
 def data_gen(img_folder, mask_folder, batch_size, aug=None):
     c = 0
+    flag = 0
     n1 = os.listdir(img_folder)  # List of training images
     random.shuffle(n1)
     while True:
@@ -27,10 +28,15 @@ def data_gen(img_folder, mask_folder, batch_size, aug=None):
             name, ext = n1[i].split(".")
             if "frames" in n1[i]:
                 _, number = name.split("s")
+                flag = 1
             else:
                 number = name
+                flag = 2
             img[i - c] = train_img  # add to array - img[0], img[1], and so on.
-            train_mask = cv2.imread(mask_folder + '/masks' + number + "." + ext, cv2.IMREAD_GRAYSCALE) / 255.
+            if flag == 1:
+                train_mask = cv2.imread(mask_folder + 'masks' + number + "." + ext, cv2.IMREAD_GRAYSCALE) / 255.
+            elif flag == 2:
+                train_mask = cv2.imread(mask_folder + number + "." + ext, cv2.IMREAD_GRAYSCALE) / 255.
             train_mask = cv2.resize(train_mask, (512, 512))
             train_mask = train_mask.reshape(512, 512, 1)
             mask[i - c] = train_mask
@@ -44,15 +50,15 @@ def data_gen(img_folder, mask_folder, batch_size, aug=None):
 
 
 def myGrid(epoch=50, bs=4):
-    learn_rate = [0.01, 0.1]  # [0.0001, 0.001, 0.01, 0.1, 0.2, 0.3]
+    learn_rate = [0.1]  # [0.0001, 0.001, 0.01, 0.1, 0.2, 0.3]
     momentum = [0.0, 0.2, 0.4, 0.6, 0.8, 0.9]
 
-    train_frame_path = '/data/segmentation_ext/train_frames/train/'
-    train_mask_path = '/data/segmentation_ext/train_masks/train/'
-    val_frame_path = '/data/segmentation_ext/val_frames/val/'
-    val_mask_path = '/data/segmentation_ext/val_masks/val/'
-    test_frame_path = '/data/segmentation_ext/test_frames/test/'
-    test_mask_path = '/data/segmentation_ext/test_masks/test/'
+    train_frame_path = '/data/segmentation_ext3_final?/train_frames/train/'
+    train_mask_path = '/data/segmentation_ext3_final?/train_masks/train/'
+    val_frame_path = '/data/segmentation_ext3_final?/val_frames/val/'
+    val_mask_path = '/data/segmentation_ext3_final?/val_masks/val/'
+    test_frame_path = '/data/segmentation_ext3_final?/test_frames/test/'
+    test_mask_path = '/data/segmentation_ext3_final?/test_masks/test/'
 
     no_of_epochs = epoch
     batch_size = bs
@@ -72,7 +78,7 @@ def myGrid(epoch=50, bs=4):
                 no_of_val_images = len(os.listdir(val_frame_path))
                 no_of_test_images = len(os.listdir(test_frame_path))
 
-                tb_call_back = TensorBoard(log_dir="log_unet", write_graph=True, write_images=True)
+                tb_call_back = TensorBoard(log_dir="log_unet3", write_graph=True, write_images=True)
                 history = m.fit_generator(train_gen, epochs=no_of_epochs, callbacks=[tb_call_back],
                                           steps_per_epoch=(no_of_training_images // batch_size),
                                           validation_data=val_gen, validation_steps=(no_of_val_images // batch_size))
@@ -82,10 +88,10 @@ def myGrid(epoch=50, bs=4):
                 print("train acc " + str(history.history['accuracy']))
                 print("valid acc " + str(history.history['val_accuracy']))
                 print("learningRate: ", lr, "\nmomentum: ", mom)
-                m.save("./models_unet/seg" + "_opt:" + str(optimizer) + "_ep:" + str(no_of_epochs) + "_bs:" + str(
+                m.save("./models_unet/seg3" + "_opt:" + str(optimizer) + "_ep:" + str(no_of_epochs) + "_bs:" + str(
                     batch_size) + "_lr:" + str(lr) + "_mom:" + str(mom) + "_loss:" + str(score[1]) + "_acc:" + str(
                     score[0]) + ".h5", "w+")
-                f = open("./models_unet/seg" + "_opt:" + str(optimizer) + "_ep:" + str(no_of_epochs) + "_bs:" + str(
+                f = open("./models_unet/seg3" + "_opt:" + str(optimizer) + "_ep:" + str(no_of_epochs) + "_bs:" + str(
                     batch_size) + "_lr:" + str(lr) + "_mom:" + str(mom) + "_loss:" + str(score[1]) + "_acc:" + str(
                     score[0]) + ".txt", "w+")
                 f.write("train_acc = " + str(history.history['accuracy']) + "\n")

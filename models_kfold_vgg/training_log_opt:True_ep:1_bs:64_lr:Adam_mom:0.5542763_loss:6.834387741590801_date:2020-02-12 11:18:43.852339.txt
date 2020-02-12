@@ -1,0 +1,7 @@
+train_acc = [0.53865665]
+valid_acc = [0.5542763]
+train_loss = [7.019712111392579]
+valid_loss = [6.834387741590801]
+Score
+Loss test [6.834387741590801]
+Acc test [0.5542763]

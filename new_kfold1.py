@@ -46,11 +46,11 @@ if __name__ == "__main__":
         weights = None
     print("epoch: %d, batch_size: %d, unlock: %s, weights: %s \n\n" % (epoch, batch_size, unlock, weights))
 
-    for i in [0, 1]:
+    for i in [2, 3]:
         print("epochs: {}, bs: {}, unlock: {}, pesi: {}, opt: {}, lr: {}, mom: {}, nest: {}, dec: {}".format(
             epoch, batch_size, unlock, weights, utility.optimizers[i], utility.lrs[i], utility.moms[i],
             utility.nesterovs[i], utility.decays[i]))
 
         main(epoch, batch_size, unlock, weights, utility.optimizers[i], utility.lrs[i], utility.moms[i],
-             utility.nesterovs[i], utility.decays[i], "OPEN_NEWFOLD5_adam_0_1")
+             utility.nesterovs[i], utility.decays[i], "OPEN_NEWFOLD2_adam_2_3")
         print("Training succesfully")

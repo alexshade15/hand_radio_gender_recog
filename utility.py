@@ -1,3 +1,8 @@
+from numpy.random import seed
+seed(1)
+from tensorflow.compat.v1 import set_random_seed
+set_random_seed(2)
+
 from tensorflow.compat.v2.keras.models import Sequential
 from tensorflow.compat.v2.keras.layers import *
 from tensorflow.compat.v2.keras.optimizers import *
@@ -115,10 +120,10 @@ def doTraining(epoch, batch_size, optimizer, my_lr, my_momentum, my_nesterov, my
                                   validation_steps=(num_val_images // batch_size),
                                   steps_per_epoch=(num_train_images // batch_size))
 
-    score = [history.history['val_loss'][-1], history.history['val_accuracy'][-1]]
+    score = [history.history['val_loss'], history.history['val_accuracy']]
     model.evaluate_generator(test_gen, num_test_images // batch_size)
 
-    writeInfo(model, epoch, batch_size, unlock, opt, my_lr, my_momentum, my_nesterov, my_decay, score, history)
+    writeInfo(model, score, history, epoch, batch_size, unlock, opt, my_lr, my_momentum, my_nesterov, my_decay)
 
 
 def writeInfo(model, score, history, epoch, bs, opt, my_lr, my_momentum=None, my_nesterov=None, my_decay=None,
@@ -130,7 +135,7 @@ def writeInfo(model, score, history, epoch, bs, opt, my_lr, my_momentum=None, my
             name_model += str(my_momentum) + "_nest:" + str(my_nesterov) + "_dec:" + str(my_decay)
         if unlock is not None:
             name_model += "_unlock:" + str(unlock) + "_acc:"
-        name_model += str(score[1]) + "_loss:" + str(score[0])
+        name_model += str(score[1][-1]) + "_loss:" + str(score[0][-1])
 
         weights_name = 'models_kfold_vgg/fine_vgg16_' + name_model + "_date:" + str(date_time_obj) + '.h5'
         model.save(weights_name)

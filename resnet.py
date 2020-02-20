@@ -36,13 +36,13 @@ if __name__ == "__main__":
         weights = None
     print("epoch: %d, batch_size: %d, unlock: %s, weights: %s \n\n" % (epoch, batch_size, unlock, weights))
 
-    for i in [15]:
+    for i in [15, 15]:
         print("epochs: {}, bs: {}, unlock: {}, pesi: {}, opt: {}, lr: {}, mom: {}, nest: {}, dec: {}".format(
             epoch, batch_size, unlock, weights, utility.optimizers[i], utility.lrs[i], utility.moms[i],
             utility.nesterovs[i], utility.decays[i]))
 
         main(epoch, batch_size, unlock, weights, utility.optimizers[i], utility.lrs[i], utility.moms[i],
-             utility.nesterovs[i], utility.decays[i], "original_reduced_Close_sgd29_" + str(i))
+             utility.nesterovs[i], utility.decays[i], "original_reduced_close_resnet_sgd29_" + str(i))
         print("Training succesfully")
 
 # def test_vgg16():

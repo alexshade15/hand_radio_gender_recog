@@ -137,6 +137,6 @@ def test():
     plot_sample(train_frame_img, train_frame_img, preds_train, preds_train_t)
 
 
-generateMasks("/data/test_normalized/", "/data/test_masks/", "", "pesi_unet_983_8feb.h5")
+generateMasks("/data/test_normalized/", "/data/test_masks/", "", "pesi_unet_9854_11feb.h5")
 imFill("/data/test_masks/")
 maskApply("/data/test_normalized/", "/data/test_masks/", "", "/data/test_handset/")

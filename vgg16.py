@@ -1,3 +1,8 @@
+from numpy.random import seed
+seed(42)
+from tensorflow.compat.v1 import set_random_seed
+set_random_seed(42)
+
 from tensorflow.keras.optimizers import *
 
 import os
@@ -29,20 +34,20 @@ if __name__ == "__main__":
     try:
         unlock = sys.argv[3]
     except IndexError:
-        unlock = True
+        unlock = False
     try:
         weights = sys.argv[4]
     except IndexError:
         weights = None
     print("epoch: %d, batch_size: %d, unlock: %s, weights: %s \n\n" % (epoch, batch_size, unlock, weights))
 
-    for i in [1, 2]:
+    for i in [15, 21]:
         print("epochs: {}, bs: {}, unlock: {}, pesi: {}, opt: {}, lr: {}, mom: {}, nest: {}, dec: {}".format(
             epoch, batch_size, unlock, weights, utility.optimizers[i], utility.lrs[i], utility.moms[i],
             utility.nesterovs[i], utility.decays[i]))
 
         main(epoch, batch_size, unlock, weights, utility.optimizers[i], utility.lrs[i], utility.moms[i],
-             utility.nesterovs[i], utility.decays[i], "original_reduced_open_adam_1-2_" + str(i))
+             utility.nesterovs[i], utility.decays[i], "original_reduced_close_" + str(i))
         print("Training succesfully")
 
 # def test_vgg16():

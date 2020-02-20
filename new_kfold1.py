@@ -16,8 +16,8 @@ def main(epoch=10, batch_size=64, unlock=False, weights=None, optimizer=(SGD(), 
     x = np.array(os.listdir(train_path))
 
     # for train_index, val_index in kf.split(os.listdir(train_path)):
-    train_index = kfold_new_indexes.training_fold0
-    val_index = kfold_new_indexes.validation_fold0
+    train_index = kfold_new_indexes.training_fold1
+    val_index = kfold_new_indexes.validation_fold1
 
     training_images = x[train_index]
     validation_images = x[val_index]
@@ -46,11 +46,11 @@ if __name__ == "__main__":
         weights = None
     print("epoch: %d, batch_size: %d, unlock: %s, weights: %s \n\n" % (epoch, batch_size, unlock, weights))
 
-    for i in [2, 3]:
+    for i in [0, 1]:
         print("epochs: {}, bs: {}, unlock: {}, pesi: {}, opt: {}, lr: {}, mom: {}, nest: {}, dec: {}".format(
             epoch, batch_size, unlock, weights, utility.optimizers[i], utility.lrs[i], utility.moms[i],
             utility.nesterovs[i], utility.decays[i]))
 
         main(epoch, batch_size, unlock, weights, utility.optimizers[i], utility.lrs[i], utility.moms[i],
-             utility.nesterovs[i], utility.decays[i], "OPEN_NEWFOLD2_adam_2_3")
+             utility.nesterovs[i], utility.decays[i], "OPEN_NEWFOLD1_open_adam_")
         print("Training succesfully")

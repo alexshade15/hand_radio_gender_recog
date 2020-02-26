@@ -14,6 +14,7 @@ from tensorflow.keras.applications.vgg16 import VGG16
 from tensorflow.keras.applications.resnet50 import ResNet50
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.callbacks import TensorBoard
+from tensorflow.keras.callbacks import ReduceLROnPlateau
 # from tensorflow.compat.v2.keras.callbacks import EarlyStopping
 
 from sklearn.preprocessing import LabelBinarizer
@@ -24,6 +25,7 @@ import sys
 import os
 import traceback
 from datetime import datetime
+import model as mdl
 
 
 def csv_image_gen(dict_labs, list_images, imgPath, batch_size, lb, mode="train", aug=None):
@@ -118,16 +120,28 @@ def do_training(epoch, batch_size, optimizer, my_lr, my_momentum, my_nesterov, m
     num_val_images = len(validation_images)
     num_test_images = len(test_images)
 
-    model = load_model(unlock, weights, 0, base_architecture=base_architecture)
+    #model = load_model(unlock, weights, 0, base_architecture=base_architecture)
+    #model = mdl.vgg16_hand("/data/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5", (512, 512, 3))
+    model = mdl.VGG16(include_top=False, weights=False, input_shape=(512, 512, 3))
+    model.load_weights(weights_path, by_name=True)
+
+    if unlock >= 1:
+        for layer in model.layers[-(6 * unlock):]:
+            layer.trainable = False
+
+    for layer in model.layers:
+        print(layer.trainable, layer.name)
 
     opt = optimizer[1]
     my_opt = optimizer[0]
     model.compile(loss='binary_crossentropy', optimizer=my_opt, metrics=['accuracy'])
+    #model.compile(loss='categorical_crossentropy', optimizer=my_opt, metrics=['accuracy'])
 
     tb_call_back = TensorBoard(log_dir="log_" + log_name, write_graph=True, write_images=True)
+    on_plateau = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=20, verbose=1, mode='auto', min_delta=0.0001, cooldown=10, min_lr=0.00001)
     # es = EarlyStopping(monitor='val_loss', verbose=1, patience=20)
 
-    history = model.fit_generator(train_gen, epochs=epoch, verbose=1, callbacks=[tb_call_back],
+    history = model.fit_generator(train_gen, epochs=epoch, verbose=1, callbacks=[tb_call_back, on_plateau],
                                   validation_data=val_gen,
                                   validation_steps=(num_val_images // batch_size),
                                   steps_per_epoch=(num_train_images // batch_size))
@@ -151,6 +165,9 @@ def write_info(model, score, history, epoch, bs, opt, my_lr, my_momentum=None, m
 
         weights_name = 'models_kfold_vgg/fine_vgg16' + name_model + "_date:" + str(date_time_obj) + '.h5'
         model.save(weights_name)
+
+        test(weights_name)
+
         f = open("models_kfold_vgg/training_log" + name_model + "_date:" + str(date_time_obj) + ".txt", "w+")
         f.write("train_acc = " + str(history.history['accuracy']) + "\n")
         f.write("valid_acc = " + str(history.history['val_accuracy']) + "\n")
@@ -199,6 +216,12 @@ def generate_performance(predictions_test, test, csv_labs, samples):
         if classified_as_female[key] == "True":
             male_classified_as_female.append(key)
 
+    print("DEBUG")
+
+    #print("male_correct_classified:", male_correct_classified, "=",  len(classified_as_male), "-", len(female_classified_as_male))
+    #print("female_correct_classified:", female_correct_classified, "=", len(classified_as_female), "-", len(male_classified_as_female))
+
+
     male_correct_classified = len(classified_as_male) - len(female_classified_as_male)
     female_correct_classified = len(classified_as_female) - len(male_classified_as_female)
     overall_accuracy = (male_correct_classified + female_correct_classified) / samples
@@ -210,8 +233,8 @@ def generate_performance(predictions_test, test, csv_labs, samples):
     print("male_accuracy:", male_accuracy)
     print("female_accuracy:", female_accuracy, "\n")
 
-    print(male_accuracy, "|", len(female_classified_as_male) / samples)
-    print(len(male_classified_as_female) / samples, "|", female_accuracy)
+    print(male_accuracy, "|", len(male_classified_as_female) / male)
+    print(len(female_classified_as_male) / female, "|", female_accuracy)
 
     print("\nmale_classified_as_female\n", male_classified_as_female)
     print("female_classified_as_male\n", female_classified_as_male)
@@ -229,22 +252,33 @@ def test(model_name):
     # test1_path = "/Users/alex/Desktop/bone age/validation/boneage-validation-dataset-2"
 
     test1 = os.listdir(test1_path)
-    samples = len(test1)
     test2 = os.listdir(test2_path)
+    samples1 = len(test1)
+    samples2 = len(test2)
+    print("s1, s2:", samples1, samples2)
     lb, csv_labs = get_labels(csv_path)
     test1_gen = csv_image_gen(csv_labs, test1, test1_path, 1, lb, mode="eval", aug=None)
     test2_gen = csv_image_gen(csv_labs, test2, test2_path, 1, lb, mode="eval", aug=None)
 
     model = lm(model_name)
 
-    predictions_test1 = model.predict_generator(test1_gen, samples)
-    predictions_test2 = model.predict_generator(test2_gen, len(test2))
+    predictions_test1 = model.predict_generator(test1_gen, samples1, verbose=1)
+    predictions_test2 = model.predict_generator(test2_gen, samples2, verbose=1)
+
+    test1_gen = csv_image_gen(csv_labs, test1, test1_path, 1, lb, mode="eval", aug=None)
+    test2_gen = csv_image_gen(csv_labs, test2, test2_path, 1, lb, mode="eval", aug=None)
+
+    eval_test1 = model.evaluate_generator(test1_gen, samples1, verbose=1)
+    eval_test2 = model.evaluate_generator(test2_gen, samples2, verbose=1)
+
     print("\n\n")
     print("TEST1 ON /data/handset/validation2/, original dataset\n")
-    generate_performance(predictions_test1, test1, csv_labs, samples)
+    print("Evaluate_gen1", eval_test1, "\n")
+    generate_performance(predictions_test1, test1, csv_labs, samples1)
     print("\n\n")
     print("TEST2 ON /data/original_r2_handset/validation2/, cleaned dataset\n")
-    generate_performance(predictions_test2, test2, csv_labs, samples)
+    print("Evaluate_gen2", eval_test2, "\n")
+    generate_performance(predictions_test2, test2, csv_labs, samples2)
 
 
 # test("/Users/alex/Downloads/vgg16_open1_sgd29.h5")
@@ -300,7 +334,7 @@ decays = [None, None,
           None, None, None, None, None, None,
           None, None, None, None, None, None,
           1e-6, 1e-6, 1e-6,
-          5e-5, 1e-6, 1e-6]
+          5e-5, 5e-5, 1e-6]
 
 optimizers = [(Adam(lr=lrs[0]), "Adam"),
               (Adam(lr=lrs[1]), "Adam"),

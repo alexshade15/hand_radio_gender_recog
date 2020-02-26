@@ -123,14 +123,14 @@ def do_training(epoch, batch_size, optimizer, my_lr, my_momentum, my_nesterov, m
     #model = load_model(unlock, weights, 0, base_architecture=base_architecture)
     #model = mdl.vgg16_hand("/data/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5", (512, 512, 3))
     model = mdl.VGG16(include_top=False, weights=False, input_shape=(512, 512, 3))
-    model.load_weights(weights_path, by_name=True)
+    # model.load_weights(weights, by_name=True)
 
-    if unlock >= 1:
-        for layer in model.layers[-(6 * unlock):]:
-            layer.trainable = False
-
-    for layer in model.layers:
-        print(layer.trainable, layer.name)
+    # if unlock >= 1:
+    #     for layer in model.layers[:-(6 * unlock)]:
+    #         layer.trainable = False
+    #
+    # for layer in model.layers:
+    #     print(layer.trainable, layer.name)
 
     opt = optimizer[1]
     my_opt = optimizer[0]
@@ -150,6 +150,7 @@ def do_training(epoch, batch_size, optimizer, my_lr, my_momentum, my_nesterov, m
     print("Score:", score)
 
     write_info(model, score, history, epoch, batch_size, unlock, opt, my_lr, my_momentum, my_nesterov, my_decay)
+
 
 
 def write_info(model, score, history, epoch, bs, opt, my_lr, my_momentum=None, my_nesterov=None, my_decay=None,

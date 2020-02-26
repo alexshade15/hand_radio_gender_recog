@@ -220,5 +220,3 @@ def VGG16(include_top=True, weights='imagenet', input_shape=(512, 512, 3)):
         model.load_weights(weights_path)
 
     return model
-
-    #model.load_weights(weights_path, by_name=True)

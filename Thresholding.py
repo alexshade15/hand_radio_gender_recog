@@ -1,6 +1,11 @@
-import cv2
 import os
-from matplotlib import pyplot as plt
+
+import cv2
+import matplotlib.pyplot as plt
+import numpy as np
+from skimage import transform
+from tensorflow.keras import Model
+from tensorflow.keras.models import load_model
 
 
 def plot_histogram(histogram, name):
@@ -14,7 +19,7 @@ def plot_histogram(histogram, name):
 
 
 def resize(image):
-    scale_percent = 40  # percent of original size
+    scale_percent = 80  # percent of original size
     width = int(image.shape[1] * scale_percent / 100)
     height = int(image.shape[0] * scale_percent / 100)
     dim = (width, height)
@@ -22,11 +27,47 @@ def resize(image):
     return cv2.resize(image, dim, interpolation=cv2.INTER_AREA)
 
 
+def get_grad(cam_model, gap_weights, img):
+    # test_img = cv2.imread(img_path + i).reshape(1, 512, 512, 3)
+
+    features, results = cam_model.predict(img)
+    cam_output = np.dot(features, gap_weights).reshape(16, 16)
+    heatmap = np.maximum(cam_output, 0)
+    heatmap /= np.max(heatmap)
+    heatmap = np.uint8(255 * heatmap)
+    heatmap = transform.resize(heatmap, (512, 512), preserve_range=True)
+    return heatmap
+
+
+def do_grad_threshold(image_path, dest_path, model_name):
+    images = os.listdir(image_path)
+
+    model = load_model(model_name)
+    gap_weights = model.layers[-1].get_weights()[0]
+    cam_model = Model(inputs=model.input,
+                      outputs=(model.layers[-3].output,
+                               model.layers[-1].output))
+
+    for img in images:
+        if "DS" not in img:
+            image = cv2.imread(image_path + img)
+            heatmap = get_grad(cam_model, gap_weights, image.reshape(1, 512, 512, 3))
+            heatmap = heatmap.astype(np.uint8)
+            (t, mask) = cv2.threshold(src=heatmap, thresh=55, maxval=255, type=cv2.THRESH_BINARY)
+            mask = cv2.bitwise_not(mask)
+            result = cv2.bitwise_and(image, image, mask=mask)
+            cv2.imwrite(dest_path + img, result)
+
+
+# do_grad_threshold("/Users/alex/Desktop/reduced1_handset/validation2/",
+#                   "/Users/alex/Desktop/heatmap_dest/",
+#                   "/Users/alex/Downloads/CAM.h5")
+
+
 def thresholda(origin_path, dest_path, name):
     ''' Thresholds the radiograpys in order to obtain the masks to use in the unet training '''
     if not (os.path.isfile(dest_path + "masks/" + str(name))):
         if os.path.isfile(origin_path + str(name)):
-            print(name)
             image = cv2.imread(filename=origin_path + str(name))
             # cv2.namedWindow(winname="Grayscale Image", flags=cv2.WINDOW_NORMAL)
             histogram = cv2.calcHist(images=[image], channels=[0], mask=None, histSize=[256], ranges=[0, 256])
@@ -81,9 +122,8 @@ def thresholda(origin_path, dest_path, name):
         else:
             print(name, "not found!")
 
-
 if __name__ == "__main__":
-    origin_path = "/Users/alex/Desktop/hist/"
+    origin_path = "/Users/alex/Desktop/heatmaps/"
 
     # list_mod_post_threshold = [14392, 1804, 12091, 1810, 8834, 6831, 1379, 1476, 1497]
     # list_also_bad_unet_segmentation = [1388, 1402, 1406, 1407, 1418, 1426, 1469, 1518, 1541, 1559, 1596, 1601, 1701,
@@ -99,7 +139,7 @@ if __name__ == "__main__":
     #     cv2.imshow(str(image_name), image)
 
     # origin_path = "/Users/alex/Desktop/new_normalized_training/"
-    dest_path = "/Users/alex/Desktop/new_groundtruth/"
+    dest_path = "/Users/alex/Desktop/heatmap_dest/"
     k = os.listdir(origin_path)
     for index, elem in enumerate(k):
         # k[index] = str(elem) + ".png"

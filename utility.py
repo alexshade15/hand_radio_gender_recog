@@ -5,7 +5,6 @@ from tensorflow.compat.v1 import set_random_seed
 
 set_random_seed(42)
 
-import tensorflow
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.models import load_model as lm
 from tensorflow.keras.layers import *
@@ -25,7 +24,6 @@ import sys
 import os
 import traceback
 from datetime import datetime
-import model as mdl
 
 
 def csv_image_gen(dict_labs, list_images, imgPath, batch_size, lb, mode="train", aug=None):
@@ -50,7 +48,7 @@ def csv_image_gen(dict_labs, list_images, imgPath, batch_size, lb, mode="train",
             random.shuffle(n1)
             if mode == "eval":
                 break
-        #labels = lb.transform(np.array(labels))
+        # labels = lb.transform(np.array(labels))
         labels = lb.transform(np.array(labels))
         if aug is not None:
             (img, labels) = next(aug.flow(img, labels, batch_size=batch_size))
@@ -123,9 +121,9 @@ def do_training(epoch, batch_size, optimizer, my_lr, my_momentum, my_nesterov, m
     num_test_images = len(test_images)
 
     model = load_model(unlock, weights, 0, base_architecture=base_architecture)
-    #model = mdl.vgg16_hand("/data/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5", (512, 512, 3))
-    #model = mdl.VGG16(include_top=False, weights=None, input_shape=(512, 512, 3))
-    #model.load_weights(weights, by_name=True)
+    # model = mdl.vgg16_hand("/data/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5", (512, 512, 3))
+    # model = mdl.VGG16(include_top=False, weights=None, input_shape=(512, 512, 3))
+    # model.load_weights(weights, by_name=True)
 
     if unlock >= 1:
         for layer in model.layers[:-(6 * unlock)]:
@@ -137,10 +135,11 @@ def do_training(epoch, batch_size, optimizer, my_lr, my_momentum, my_nesterov, m
     opt = optimizer[1]
     my_opt = optimizer[0]
     model.compile(loss='binary_crossentropy', optimizer=my_opt, metrics=['accuracy'])
-    #model.compile(loss='categorical_crossentropy', optimizer=my_opt, metrics=['accuracy'])
+    # model.compile(loss='categorical_crossentropy', optimizer=my_opt, metrics=['accuracy'])
 
     tb_call_back = TensorBoard(log_dir="log_" + log_name, write_graph=True, write_images=True)
-    on_plateau = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=20, verbose=1, mode='auto', min_delta=0.0001, cooldown=10, min_lr=0.00001)
+    on_plateau = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=20, verbose=1, mode='auto',
+                                   min_delta=0.0001, cooldown=10, min_lr=0.00001)
     # es = EarlyStopping(monitor='val_loss', verbose=1, patience=20)
 
     history = model.fit_generator(train_gen, epochs=epoch, verbose=1, callbacks=[tb_call_back, on_plateau],
@@ -152,7 +151,6 @@ def do_training(epoch, batch_size, optimizer, my_lr, my_momentum, my_nesterov, m
     print("Score:", score)
 
     write_info(model, score, history, epoch, batch_size, unlock, opt, my_lr, my_momentum, my_nesterov, my_decay)
-
 
 
 def write_info(model, score, history, epoch, bs, opt, my_lr, my_momentum=None, my_nesterov=None, my_decay=None,
@@ -219,12 +217,6 @@ def generate_performance(predictions_test, test, csv_labs, samples):
         if classified_as_female[key] == "True":
             male_classified_as_female.append(key)
 
-    print("DEBUG")
-
-    #print("male_correct_classified:", male_correct_classified, "=",  len(classified_as_male), "-", len(female_classified_as_male))
-    #print("female_correct_classified:", female_correct_classified, "=", len(classified_as_female), "-", len(male_classified_as_female))
-
-
     male_correct_classified = len(classified_as_male) - len(female_classified_as_male)
     female_correct_classified = len(classified_as_female) - len(male_classified_as_female)
     overall_accuracy = (male_correct_classified + female_correct_classified) / samples
@@ -242,52 +234,53 @@ def generate_performance(predictions_test, test, csv_labs, samples):
     print("\nmale_classified_as_female\n", male_classified_as_female)
     print("female_classified_as_male\n", female_classified_as_male)
 
+
 def test(model_name):
     # evaluate the model: overall accuracy, accuracy on the single class
     # write the wrong classified
     # generate the confusion matrix
 
-    csv_path = "/data/unified.csv"
-    csv_train = "new_train.csv"
-    #test1_path = '/data/handset/validation2/'
-    #test2_path = '/data/original_r2_handset/validation2/'
+    full_csv = "/data/unified.csv"
+    test_csv = "new_train.csv"
 
-    test1_path = "/data/original_r2_handset/validation1/"
-    test2_path = "/data/original_r2_handset/validation2/"
-    test3_path = "/data/handset/validation1/"
-    test4_path = "/data/handset/validation2/"
-    test5_path = "/data/waste_set/"
-    test6_path = "/data/test_handset/"
+    lb_full, csv_labs_full = get_labels(full_csv)
+    lb_test, csv_labs_test = get_labels(test_csv)
 
-
-    test1 = os.listdir(test1_path)
-    test2 = os.listdir(test2_path)
-    samples1 = len(test1)
-    samples2 = len(test2)
-    print("s1, s2:", samples1, samples2)
-    lb, csv_labs = get_labels(csv_path)
-    test1_gen = csv_image_gen(csv_labs, test1, test1_path, 1, lb, mode="eval", aug=None)
-    test2_gen = csv_image_gen(csv_labs, test2, test2_path, 1, lb, mode="eval", aug=None)
+    paths = [
+        "/data/original_r2_handset/validation1/",
+        "/data/original_r2_handset/validation2/",
+        "/data/handset/validation1/",
+        "/data/handset/validation2/",
+        "/data/waste_set/",
+        "/data/test_handset/"
+    ]
 
     model = lm(model_name)
 
-    predictions_test1 = model.predict_generator(test1_gen, samples1, verbose=1)
-    predictions_test2 = model.predict_generator(test2_gen, samples2, verbose=1)
+    for index, path in enumerate(paths):
 
-    test1_gen = csv_image_gen(csv_labs, test1, test1_path, 1, lb, mode="eval", aug=None)
-    test2_gen = csv_image_gen(csv_labs, test2, test2_path, 1, lb, mode="eval", aug=None)
+        test_list = os.listdir(path)
+        num_sample = len(test)
 
-    eval_test1 = model.evaluate_generator(test1_gen, samples1, verbose=1)
-    eval_test2 = model.evaluate_generator(test2_gen, samples2, verbose=1)
+        if path == "/data/test_handset/":
+            test_gen = csv_image_gen(csv_labs_test, test_list, path, 1, lb_test, mode="eval", aug=None)
+            csv_labs = csv_labs_test
+        else:
+            test_gen = csv_image_gen(csv_labs_full, test_list, path, 1, lb_full, mode="eval", aug=None)
+            csv_labs = csv_labs_full
 
-    print("\n\n")
-    print("TEST1 ON /data/handset/validation2/, original dataset\n")
-    print("Evaluate_gen1", eval_test1, "\n")
-    generate_performance(predictions_test1, test1, csv_labs, samples1)
-    print("\n\n")
-    print("TEST2 ON /data/original_r2_handset/validation2/, cleaned dataset\n")
-    print("Evaluate_gen2", eval_test2, "\n")
-    generate_performance(predictions_test2, test2, csv_labs, samples2)
+        predictions_test = model.predict_generator(test_gen, num_sample, verbose=1)
+
+        print("\n\n\n\n")
+        print('#' * 50)
+        print('-' * 50)
+        print('-' * 15, path, '-' * 15)
+        print('-' * 50)
+        print('#' * 50)
+        print("num_samples", num_sample)
+        print(model_name)
+        # print("Evaluate_gen1", eval_test1, "\n")
+        generate_performance(predictions_test, test_list, csv_labs, num_sample)
 
 
 # test("/Users/alex/Downloads/vgg16_open1_sgd29.h5")

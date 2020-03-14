@@ -22,6 +22,7 @@ import random
 import cv2
 import sys
 import os
+import csv
 import traceback
 from datetime import datetime
 
@@ -241,26 +242,40 @@ def test(model_name):
     # generate the confusion matrix
 
     full_csv = "/data/unified.csv"
-    test_csv = "new_train.csv"
+    test_csv = "/data/new_train.csv"
 
     lb_full, csv_labs_full = get_labels(full_csv)
     lb_test, csv_labs_test = get_labels(test_csv)
 
     paths = [
-        "/data/original_r2_handset/validation1/",
+        #"/data/original_r2_handset/validation1/",
         "/data/original_r2_handset/validation2/",
-        "/data/handset/validation1/",
-        "/data/handset/validation2/",
-        "/data/waste_set/",
+        #"/data/handset/validation1/",
+        #"/data/handset/validation2/",
+        #"/data/waste_set/",
         "/data/test_handset/"
     ]
 
     model = lm(model_name)
 
+
+    d = {}
+    f = open(full_csv, 'r')
+    reader = csv.reader(f)
+    f.readline()
+    for row in reader:
+        d[row[0]] = [row[1], row[2]]
+
+    f = open(test_csv, 'r')
+    reader = csv.reader(f)
+    f.readline()
+    for row in reader:
+        d[row[0]] = [row[1], row[2]]
+
     for index, path in enumerate(paths):
 
         test_list = os.listdir(path)
-        num_sample = len(test)
+        num_sample = len(test_list)
 
         if path == "/data/test_handset/":
             test_gen = csv_image_gen(csv_labs_test, test_list, path, 1, lb_test, mode="eval", aug=None)
@@ -272,18 +287,46 @@ def test(model_name):
         predictions_test = model.predict_generator(test_gen, num_sample, verbose=1)
 
         print("\n\n\n\n")
-        print('#' * 50)
-        print('-' * 50)
-        print('-' * 15, path, '-' * 15)
-        print('-' * 50)
-        print('#' * 50)
+        print('#' * 200)
+        print('-' * 200)
+        print('-' * 100, path, '-' * 100)
+        print('-' * 200)
+        print('#' * 200)
         print("num_samples", num_sample)
         print(model_name)
         # print("Evaluate_gen1", eval_test1, "\n")
         generate_performance(predictions_test, test_list, csv_labs, num_sample)
 
 
-# test("/Users/alex/Downloads/vgg16_open1_sgd29.h5")
+
+print("*"*150);print("*"*150)
+print("*"*150);print("*"*150)
+print("OPEN 15:")
+test("models_kfold_vgg/fine_vgg16_opt:True_ep:100_bs:32_lr:SGD_mom:0.01_nest:0.9_dec:False0.9319853_loss:0.2653489353267812_date:2020-02-27 01:05:03.017805.h5")
+print("*"*150);print("*"*150)
+print("*"*150);print("*"*150)
+print("OPEN 15/32:")
+test("models_kfold_vgg/fine_vgg16__opt:True_ep:50_bs:32_lr:SGD_mom:0.01_nest:0.9_dec:False0.9338235_loss:0.3037056511061059_date:2020-02-17 15:10:53.710228.h5")
+print("*"*150);print("*"*150)
+print("*"*150);print("*"*150)
+print("OPEN 21:")
+test("models_kfold_vgg/fine_vgg16__opt:True_ep:150_bs:64_lr:SGD_mom:0.001_nest:0.9_dec:False0.9316406_loss:0.27761007679833305_date:2020-02-19 03:28:16.585598.h5")
+print("*"*150);print("*"*150)
+print("*"*150);print("*"*150)
+print("OPEN 38:")
+test("models_kfold_vgg/fine_vgg16_opt:True_ep:150_bs:64_lr:SGD_mom:0.001_nest:0.9_dec:True_unlock:5e-050.9277344_loss:0.1842192808787028_date:2020-03-06 08:11:49.135193.h5")
+print("*"*150);print("*"*150)
+print("*"*150);print("*"*150)
+print("OPEN2 15:")
+test("models_kfold_vgg/fine_vgg16_opt:2_ep:50_bs:64_lr:SGD_mom:0.01_nest:0.9_dec:False0.9375_loss:0.2797849600513776_date:2020-03-03 08:56:16.774791.h5")
+print("*"*150);print("*"*150)
+print("*"*150);print("*"*150)
+print("4 bit:")
+test("models_kfold_vgg/fine_vgg16_opt:True_ep:50_bs:32_lr:SGD_mom:0.01_nest:0.9_dec:False0.9099265_loss:0.24637130523721376_date:2020-03-09 04:31:26.449918.h5")
+print("*"*150);print("*"*150)
+print("*"*150);print("*"*150)
+print("3 bit:")
+test("models_kfold_vgg/fine_vgg16_opt:True_ep:50_bs:32_lr:SGD_mom:0.01_nest:0.9_dec:False0.91544116_loss:0.2815485159969992_date:2020-03-10 06:22:12.339695.h5")
 
 aug = ImageDataGenerator(
     rotation_range=20,

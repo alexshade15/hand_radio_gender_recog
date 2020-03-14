@@ -258,7 +258,7 @@ def generate_performance(predictions_test, test, csv_labs, samples, d):
             if elem in wrong_classified:
                 wrong += 1
         years_accuracy[k] = 1 - (wrong / num)
-        
+
     print(years_accuracy)
 
 
@@ -268,7 +268,7 @@ def test(model_name):
     # generate the confusion matrix
 
     full_csv = "/data/unified.csv"
-    test_csv = "/data/test.csv"
+    test_csv = "/data/new_train.csv"
 
     lb_full, csv_labs_full = get_labels(full_csv)
     lb_test, csv_labs_test = get_labels(test_csv)

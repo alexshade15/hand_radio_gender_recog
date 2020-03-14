@@ -188,7 +188,7 @@ def write_info(model, score, history, epoch, bs, opt, my_lr, my_momentum=None, m
         print(sys.exc_info()[2])
 
 
-def generate_performance(predictions_test, test, csv_labs, samples, d):
+def generate_performance(predictions_test, test, csv_labs, samples, d, eth):
     male = 0
     female = 0
     classified_as_male = {}
@@ -201,14 +201,23 @@ def generate_performance(predictions_test, test, csv_labs, samples, d):
         k = k.split(".")[0]
         age = int(int(d[k][1]) / 12)
         if age not in years:
-            years[age] = {}
+            years[age] = []
         if age in years:
-            years[age].appen(k)
+            years[age].append(k)
 
             # if d[k][0] not in years[age]:
             #     years[age][d[k][0]] = 0
             # if d[k][0] in years[age]:
             #     years[age][d[k][0]] += 1
+    if eth == 1:
+        ethnic = {}
+        for k in test:
+            k = k.split(".")[0]
+            e = d[k][2]
+            if e not in ethnic:
+                ethnic[e] = []
+            if e in ethnic:
+                ethnic[e].append(k)
 
     for index, elem in enumerate(predictions_test):
         key = test[index].split(".")[0]
@@ -259,7 +268,21 @@ def generate_performance(predictions_test, test, csv_labs, samples, d):
                 wrong += 1
         years_accuracy[k] = 1 - (wrong / num)
 
+    if eth == 1:
+        eth_accuracy = {}
+        for k in ethnic:
+            num = len(ethnic[k])
+            wrong = 0
+            for elem in ethnic[k]:
+                if elem in wrong_classified:
+                    wrong += 1
+            eth_accuracy[k] = 1 - (wrong / num)
+        print("eth_accuracy")
+        print(eth_accuracy)
+
+    print("years_accuracy")
     print(years_accuracy)
+
 
 
 def test(model_name):
@@ -267,19 +290,20 @@ def test(model_name):
     # write the wrong classified
     # generate the confusion matrix
 
-    full_csv = "/data/unified.csv"
-    test_csv = "/data/new_train.csv"
+    full_csv = "/Users/alex/Desktop/full.csv"
+    test_csv = "/Users/alex/Desktop/test_F.csv"
 
     lb_full, csv_labs_full = get_labels(full_csv)
     lb_test, csv_labs_test = get_labels(test_csv)
 
     paths = [
-        # "/data/original_r2_handset/validation1/",
-        "/data/original_r2_handset/validation2/",
+         "/data/original_r2_handset/validation2/",
+        #"/Users/alex/Desktop/original_r2_handset/validation2/",
         # "/data/handset/validation1/",
         # "/data/handset/validation2/",
         # "/data/waste_set/",
         "/data/test_handset/"
+        #"/Users/alex/Desktop/test_handset/"
     ]
 
     model = lm(model_name)
@@ -299,15 +323,17 @@ def test(model_name):
 
     for index, path in enumerate(paths):
 
-        test_list = os.listdir(path)
+        test_list = os.listdir(path)[:50]
         num_sample = len(test_list)
 
         if path == "/data/test_handset/":
             test_gen = csv_image_gen(csv_labs_test, test_list, path, 1, lb_test, mode="eval", aug=None)
             csv_labs = csv_labs_test
+            eth = 1
         else:
             test_gen = csv_image_gen(csv_labs_full, test_list, path, 1, lb_full, mode="eval", aug=None)
             csv_labs = csv_labs_full
+            eth = 0
 
         predictions_test = model.predict_generator(test_gen, num_sample, verbose=1)
 
@@ -320,7 +346,12 @@ def test(model_name):
         print("num_samples", num_sample)
         print(model_name)
         # print("Evaluate_gen1", eval_test1, "\n")
-        generate_performance(predictions_test, test_list, csv_labs, num_sample, d)
+        generate_performance(predictions_test, test_list, csv_labs, num_sample, d, eth)
+
+
+# test("/Users/alex/Downloads/CAM.h5")
+# test("/Users/alex/Downloads/CAM_4bit.h5")
+# test("/Users/alex/Downloads/CAM_3bit.h5")
 
 
 print("*" * 150);

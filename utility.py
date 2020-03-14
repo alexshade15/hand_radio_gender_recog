@@ -188,13 +188,27 @@ def write_info(model, score, history, epoch, bs, opt, my_lr, my_momentum=None, m
         print(sys.exc_info()[2])
 
 
-def generate_performance(predictions_test, test, csv_labs, samples):
+def generate_performance(predictions_test, test, csv_labs, samples, d):
     male = 0
     female = 0
     classified_as_male = {}
     classified_as_female = {}
     male_classified_as_female = []
     female_classified_as_male = []
+
+    years = {}
+    for k in test:
+        k = k.split(".")[0]
+        age = int(int(d[k][1]) / 12)
+        if age not in years:
+            years[age] = {}
+        if age in years:
+            years[age].appen(k)
+
+            # if d[k][0] not in years[age]:
+            #     years[age][d[k][0]] = 0
+            # if d[k][0] in years[age]:
+            #     years[age][d[k][0]] += 1
 
     for index, elem in enumerate(predictions_test):
         key = test[index].split(".")[0]
@@ -235,6 +249,18 @@ def generate_performance(predictions_test, test, csv_labs, samples):
     print("\nmale_classified_as_female\n", male_classified_as_female)
     print("female_classified_as_male\n", female_classified_as_male)
 
+    wrong_classified = male_classified_as_female + female_classified_as_male
+    years_accuracy = {}
+    for k in years:
+        num = len(years[k])
+        wrong = 0
+        for elem in years[k]:
+            if elem in wrong_classified:
+                wrong += 1
+        years_accuracy[k] = 1 - (wrong / num)
+        
+    print(years_accuracy)
+
 
 def test(model_name):
     # evaluate the model: overall accuracy, accuracy on the single class
@@ -242,22 +268,21 @@ def test(model_name):
     # generate the confusion matrix
 
     full_csv = "/data/unified.csv"
-    test_csv = "/data/new_train.csv"
+    test_csv = "/data/test.csv"
 
     lb_full, csv_labs_full = get_labels(full_csv)
     lb_test, csv_labs_test = get_labels(test_csv)
 
     paths = [
-        #"/data/original_r2_handset/validation1/",
+        # "/data/original_r2_handset/validation1/",
         "/data/original_r2_handset/validation2/",
-        #"/data/handset/validation1/",
-        #"/data/handset/validation2/",
-        #"/data/waste_set/",
+        # "/data/handset/validation1/",
+        # "/data/handset/validation2/",
+        # "/data/waste_set/",
         "/data/test_handset/"
     ]
 
     model = lm(model_name)
-
 
     d = {}
     f = open(full_csv, 'r')
@@ -270,7 +295,7 @@ def test(model_name):
     reader = csv.reader(f)
     f.readline()
     for row in reader:
-        d[row[0]] = [row[1], row[2]]
+        d[row[0]] = [row[1], row[2], row[3]]
 
     for index, path in enumerate(paths):
 
@@ -295,38 +320,58 @@ def test(model_name):
         print("num_samples", num_sample)
         print(model_name)
         # print("Evaluate_gen1", eval_test1, "\n")
-        generate_performance(predictions_test, test_list, csv_labs, num_sample)
+        generate_performance(predictions_test, test_list, csv_labs, num_sample, d)
 
 
-
-print("*"*150);print("*"*150)
-print("*"*150);print("*"*150)
+print("*" * 150);
+print("*" * 150)
+print("*" * 150);
+print("*" * 150)
 print("OPEN 15:")
-test("models_kfold_vgg/fine_vgg16_opt:True_ep:100_bs:32_lr:SGD_mom:0.01_nest:0.9_dec:False0.9319853_loss:0.2653489353267812_date:2020-02-27 01:05:03.017805.h5")
-print("*"*150);print("*"*150)
-print("*"*150);print("*"*150)
+test(
+    "models_kfold_vgg/fine_vgg16_opt:True_ep:100_bs:32_lr:SGD_mom:0.01_nest:0.9_dec:False0.9319853_loss:0.2653489353267812_date:2020-02-27 01:05:03.017805.h5")
+print("*" * 150);
+print("*" * 150)
+print("*" * 150);
+print("*" * 150)
 print("OPEN 15/32:")
-test("models_kfold_vgg/fine_vgg16__opt:True_ep:50_bs:32_lr:SGD_mom:0.01_nest:0.9_dec:False0.9338235_loss:0.3037056511061059_date:2020-02-17 15:10:53.710228.h5")
-print("*"*150);print("*"*150)
-print("*"*150);print("*"*150)
+test(
+    "models_kfold_vgg/fine_vgg16__opt:True_ep:50_bs:32_lr:SGD_mom:0.01_nest:0.9_dec:False0.9338235_loss:0.3037056511061059_date:2020-02-17 15:10:53.710228.h5")
+print("*" * 150);
+print("*" * 150)
+print("*" * 150);
+print("*" * 150)
 print("OPEN 21:")
-test("models_kfold_vgg/fine_vgg16__opt:True_ep:150_bs:64_lr:SGD_mom:0.001_nest:0.9_dec:False0.9316406_loss:0.27761007679833305_date:2020-02-19 03:28:16.585598.h5")
-print("*"*150);print("*"*150)
-print("*"*150);print("*"*150)
+test(
+    "models_kfold_vgg/fine_vgg16__opt:True_ep:150_bs:64_lr:SGD_mom:0.001_nest:0.9_dec:False0.9316406_loss:0.27761007679833305_date:2020-02-19 03:28:16.585598.h5")
+print("*" * 150);
+print("*" * 150)
+print("*" * 150);
+print("*" * 150)
 print("OPEN 38:")
-test("models_kfold_vgg/fine_vgg16_opt:True_ep:150_bs:64_lr:SGD_mom:0.001_nest:0.9_dec:True_unlock:5e-050.9277344_loss:0.1842192808787028_date:2020-03-06 08:11:49.135193.h5")
-print("*"*150);print("*"*150)
-print("*"*150);print("*"*150)
+test(
+    "models_kfold_vgg/fine_vgg16_opt:True_ep:150_bs:64_lr:SGD_mom:0.001_nest:0.9_dec:True_unlock:5e-050.9277344_loss:0.1842192808787028_date:2020-03-06 08:11:49.135193.h5")
+print("*" * 150);
+print("*" * 150)
+print("*" * 150);
+print("*" * 150)
 print("OPEN2 15:")
-test("models_kfold_vgg/fine_vgg16_opt:2_ep:50_bs:64_lr:SGD_mom:0.01_nest:0.9_dec:False0.9375_loss:0.2797849600513776_date:2020-03-03 08:56:16.774791.h5")
-print("*"*150);print("*"*150)
-print("*"*150);print("*"*150)
+test(
+    "models_kfold_vgg/fine_vgg16_opt:2_ep:50_bs:64_lr:SGD_mom:0.01_nest:0.9_dec:False0.9375_loss:0.2797849600513776_date:2020-03-03 08:56:16.774791.h5")
+print("*" * 150);
+print("*" * 150)
+print("*" * 150);
+print("*" * 150)
 print("4 bit:")
-test("models_kfold_vgg/fine_vgg16_opt:True_ep:50_bs:32_lr:SGD_mom:0.01_nest:0.9_dec:False0.9099265_loss:0.24637130523721376_date:2020-03-09 04:31:26.449918.h5")
-print("*"*150);print("*"*150)
-print("*"*150);print("*"*150)
+test(
+    "models_kfold_vgg/fine_vgg16_opt:True_ep:50_bs:32_lr:SGD_mom:0.01_nest:0.9_dec:False0.9099265_loss:0.24637130523721376_date:2020-03-09 04:31:26.449918.h5")
+print("*" * 150);
+print("*" * 150)
+print("*" * 150);
+print("*" * 150)
 print("3 bit:")
-test("models_kfold_vgg/fine_vgg16_opt:True_ep:50_bs:32_lr:SGD_mom:0.01_nest:0.9_dec:False0.91544116_loss:0.2815485159969992_date:2020-03-10 06:22:12.339695.h5")
+test(
+    "models_kfold_vgg/fine_vgg16_opt:True_ep:50_bs:32_lr:SGD_mom:0.01_nest:0.9_dec:False0.91544116_loss:0.2815485159969992_date:2020-03-10 06:22:12.339695.h5")
 
 aug = ImageDataGenerator(
     rotation_range=20,

@@ -37,11 +37,12 @@ def csv_image_gen(dict_labs, list_images, imgPath, batch_size, lb, mode="train",
         labels = []
         img = np.zeros((batch_size, 512, 512, 3)).astype('float')
         for i in range(c, c + batch_size):
-            train_img = cv2.imread(imgPath + '/' + n1[i])
+            train_img = cv2.imread(imgPath + '/' + n1[i % len(n1)])
             train_img = cv2.resize(train_img / 255., (512, 512))  # Read an image from folder and resize
             train_img = train_img.reshape(512, 512, 3)
             number, ext = n1[i].split(".")
             img[i - c] = train_img  # add to array - img[0], img[1], and so on.
+
             labels.append(dict_labs[number])
         c += batch_size
         if c + batch_size - 1 > len(n1):
@@ -49,6 +50,7 @@ def csv_image_gen(dict_labs, list_images, imgPath, batch_size, lb, mode="train",
             random.shuffle(n1)
             if mode == "eval":
                 break
+        #labels = lb.transform(np.array(labels))
         labels = lb.transform(np.array(labels))
         if aug is not None:
             (img, labels) = next(aug.flow(img, labels, batch_size=batch_size))
@@ -120,17 +122,17 @@ def do_training(epoch, batch_size, optimizer, my_lr, my_momentum, my_nesterov, m
     num_val_images = len(validation_images)
     num_test_images = len(test_images)
 
-    #model = load_model(unlock, weights, 0, base_architecture=base_architecture)
+    model = load_model(unlock, weights, 0, base_architecture=base_architecture)
     #model = mdl.vgg16_hand("/data/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5", (512, 512, 3))
-    model = mdl.VGG16(include_top=False, weights=False, input_shape=(512, 512, 3))
-    # model.load_weights(weights, by_name=True)
+    #model = mdl.VGG16(include_top=False, weights=None, input_shape=(512, 512, 3))
+    #model.load_weights(weights, by_name=True)
 
-    # if unlock >= 1:
-    #     for layer in model.layers[:-(6 * unlock)]:
-    #         layer.trainable = False
-    #
-    # for layer in model.layers:
-    #     print(layer.trainable, layer.name)
+    if unlock >= 1:
+        for layer in model.layers[:-(6 * unlock)]:
+            layer.trainable = False
+
+    for layer in model.layers:
+        print(layer.trainable, layer.name)
 
     opt = optimizer[1]
     my_opt = optimizer[0]
@@ -246,11 +248,17 @@ def test(model_name):
     # generate the confusion matrix
 
     csv_path = "/data/unified.csv"
-    test1_path = '/data/handset/validation2/'
-    test2_path = '/data/original_r2_handset/validation2/'
+    csv_train = "new_train.csv"
+    #test1_path = '/data/handset/validation2/'
+    #test2_path = '/data/original_r2_handset/validation2/'
 
-    # csv_path = "/Users/alex/Desktop/full.csv"
-    # test1_path = "/Users/alex/Desktop/bone age/validation/boneage-validation-dataset-2"
+    test1_path = "/data/original_r2_handset/validation1/"
+    test2_path = "/data/original_r2_handset/validation2/"
+    test3_path = "/data/handset/validation1/"
+    test4_path = "/data/handset/validation2/"
+    test5_path = "/data/waste_set/"
+    test6_path = "/data/test_handset/"
+
 
     test1 = os.listdir(test1_path)
     test2 = os.listdir(test2_path)
@@ -300,7 +308,7 @@ lrs = [0.1, 0.01,
        0.01, 0.01, 0.01, 0.01, 0.01, 0.01,
        0.001, 0.001, 0.001, 0.001, 0.001, 0.001,
        0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001,
-       0.00001, 0.00001, 0.00001, 0.00001, 0.00001, 0.00001,
+       0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
        0.01, 0.001, 0.0001,
        0.01, 0.001, 0.0001]
 
